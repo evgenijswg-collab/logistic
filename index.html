@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рабочее место логиста</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg: #f5f6f8; --white: #fff; --border: #e2e5eb; --text: #1a1a1a; --text2: #6b7280; --primary: #2563eb; --danger: #dc2626; --warning: #d97706; --success: #059669; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; }
+        .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+        .header-title { font-size: 15px; font-weight: 600; }
+        .btn { padding: 7px 14px; border: none; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-secondary { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; }
+        .main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 8px 16px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer; background: var(--white); }
+        .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .column { background: #f0f1f3; border-radius: 8px; padding: 12px; min-height: 200px; }
+        .column-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; padding: 4px 8px; border-radius: 4px; text-align: center; }
+        .col-forming { background: #e5e7eb; }
+        .col-loading { background: #dbeafe; color: #1e40af; }
+        .col-transit { background: #d1fae5; color: #065f46; }
+        .col-done { background: #e5e7eb; color: #374151; }
+        .trip-card { background: var(--white); border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid var(--border); font-size: 11px; }
+        .trip-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+        .trip-card .id { font-weight: 600; }
+        .trip-card .route { color: var(--text2); margin: 4px 0; }
+        .trip-card .load { height: 6px; border-radius: 3px; background: #e5e7eb; margin-top: 4px; }
+        .trip-card .load-fill { height: 100%; border-radius: 3px; }
+        .load-green { background: var(--success); }
+        .load-yellow { background: var(--warning); }
+        .load-red { background: var(--danger); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 20; display: flex; align-items: center; justify-content: center; }
+        .modal { background: var(--white); border-radius: 8px; padding: 24px; width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+        .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; font-size: 11px; color: var(--text2); text-transform: uppercase; margin-bottom: 4px; }
+        .form-input, .form-select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; outline: none; }
+        .form-input:focus, .form-select:focus { border-color: var(--primary); }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { text-align: left; padding: 6px 8px; font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+        td { padding: 6px 8px; border-bottom: 1px solid #f0f1f3; }
+        .empty { text-align: center; padding: 40px; color: var(--text2); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 500; }
+        .badge-green { background: #ecfdf5; color: var(--success); }
+        .badge-red { background: #fef2f2; color: var(--danger); }
+        .badge-blue { background: #eff6ff; color: #1e40af; }
+        @media print { body * { visibility: hidden; } .print-area, .print-area * { visibility: visible; } .print-area { position: absolute; left: 0; top: 0; width: 100%; } }
+    </style>
+</head>
+<body x-data="app()" x-init="init()">
+    
+    <header class="header">
+        <span class="header-title">🚚 Рабочее место логиста</span>
+        <div style="display: flex; gap: 8px;">
+            <span style="font-size: 12px; color: var(--text2);" x-text="'Сегодня: ' + today"></span>
+            <button class="btn btn-primary btn-sm" @click="showModal('trip')">+ Новый рейс</button>
+            <button class="btn btn-secondary btn-sm" @click="loadData()">Обновить</button>
+        </div>
+    </header>
+    
+    <main class="main">
+        
+        <div class="tabs">
+            <button class="tab" :class="tab === 'board' ? 'active' : ''" @click="tab = 'board'">📋 Доска рейсов</button>
+            <button class="tab" :class="tab === 'reports' ? 'active' : ''" @click="tab = 'reports'">📊 Отчёты</button>
+            <button class="tab" :class="tab === 'waybill' ? 'active' : ''" @click="tab = 'waybill'">🧾 Путевой лист</button>
+            <button class="tab" :class="tab === 'costs' ? 'active' : ''" @click="tab = 'costs'">⛽ Затраты</button>
+            <button class="tab" :class="tab === 'refs' ? 'active' : ''" @click="tab = 'refs'">📚 Справочники</button>
+        </div>
+        
+        <!-- ДОСКА РЕЙСОВ -->
+        <div x-show="tab === 'board'">
+            <div class="board">
+                <div class="column">
+                    <div class="column-title col-forming">📋 Формируется</div>
+                    <template x-for="t in tripsByStatus('Формируется')" :key="t.id">
+                        <div class="trip-card" @click="showTripDetail(t.id)">
+                            <div class="id" x-text="'Рейс #' + t.id"></div>
+                            <div class="route" x-text="t.route"></div>
+                            <div x-text="t.vehicle + ' | ' + t.driver"></div>
+                            <div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadPercent(t) + '%'"></div></div>
+                            <div style="font-size:10px;color:var(--text2);" x-text="loadPercent(t) + '%'"></div>
+                        </div>
+                    </template>
+                </div>
+                <div class="column">
+                    <div class="column-title col-loading">🔵 Загрузка</div>
+                    <template x-for="t in tripsByStatus('Загрузка')" :key="t.id">
+                        <div class="trip-card" @click="showTripDetail(t.id)">
+                            <div class="id" x-text="'Рейс #' + t.id"></div>
+                            <div class="route" x-text="t.route"></div>
+                            <div x-text="t.vehicle + ' | ' + t.driver"></div>
+                            <div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadPercent(t) + '%'"></div></div>
+                        </div>
+                    </template>
+                </div>
+                <div class="column">
+                    <div class="column-title col-transit">🟢 В пути</div>
+                    <template x-for="t in tripsByStatus('В пути')" :key="t.id">
+                        <div class="trip-card" @click="showTripDetail(t.id)">
+                            <div class="id" x-text="'Рейс #' + t.id"></div>
+                            <div class="route" x-text="t.route"></div>
+                            <div x-text="t.vehicle + ' | ' + t.driver"></div>
+                            <div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadPercent(t) + '%'"></div></div>
+                        </div>
+                    </template>
+                </div>
+                <div class="column">
+                    <div class="column-title col-done">✅ Завершён</div>
+                    <template x-for="t in tripsByStatus('Завершён')" :key="t.id">
+                        <div class="trip-card" @click="showTripDetail(t.id)">
+                            <div class="id" x-text="'Рейс #' + t.id"></div>
+                            <div class="route" x-text="t.route"></div>
+                            <div x-text="t.vehicle + ' | ' + t.driver"></div>
+                            <div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadPercent(t) + '%'"></div></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ОТЧЁТЫ -->
+        <div x-show="tab === 'reports'">
+            <p style="padding: 20px; color: var(--text2);">Отчёты будут здесь</p>
+        </div>
+        
+        <!-- ПУТЕВОЙ ЛИСТ -->
+        <div x-show="tab === 'waybill'">
+            <div class="card" style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;">
+                <p>Выберите рейс для печати путевого листа</p>
+                <select class="form-select" x-model="selectedTrip" style="margin-top:8px; width:300px;">
+                    <option value="">—</option>
+                    <template x-for="t in trips" :key="t.id">
+                        <option :value="t.id" x-text="'Рейс #' + t.id + ' — ' + t.route"></option>
+                    </template>
+                </select>
+                <button class="btn btn-primary btn-sm" style="margin-top:8px;" @click="printWaybill()">Печать</button>
+            </div>
+        </div>
+        
+        <!-- ЗАТРАТЫ -->
+        <div x-show="tab === 'costs'">
+            <p style="padding: 20px; color: var(--text2);">Затраты будут здесь</p>
+        </div>
+        
+        <!-- СПРАВОЧНИКИ -->
+        <div x-show="tab === 'refs'">
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button class="btn btn-secondary btn-sm" @click="showModal('vehicle')">+ Машина</button>
+                <button class="btn btn-secondary btn-sm" @click="showModal('driver')">+ Водитель</button>
+                <button class="btn btn-secondary btn-sm" @click="showModal('route')">+ Маршрут</button>
+            </div>
+            <div class="grid grid-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+                <div class="card" style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;">
+                    <div style="font-weight:600;margin-bottom:8px;">Машины</div>
+                    <template x-for="v in vehicles" :key="v.plate">
+                        <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;" x-text="v.plate + ' — ' + v.model + ' (' + v.capacity + 'т)'"></div>
+                    </template>
+                </div>
+                <div class="card" style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;">
+                    <div style="font-weight:600;margin-bottom:8px;">Водители</div>
+                    <template x-for="d in drivers" :key="d.name">
+                        <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;" x-text="d.name + ' — ' + d.phone"></div>
+                    </template>
+                </div>
+                <div class="card" style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;">
+                    <div style="font-weight:600;margin-bottom:8px;">Маршруты</div>
+                    <template x-for="r in routes" :key="r.name">
+                        <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;" x-text="r.name + ' — ' + r.distance + ' км'"></div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        
+        <!-- МОДАЛКА: Новый рейс -->
+        <div class="modal-overlay" x-show="modal === 'trip'" @click.self="modal = null">
+            <div class="modal">
+                <div class="modal-title">Новый рейс</div>
+                <div class="form-group"><label class="form-label">Дата</label><input type="date" class="form-input" x-model="formTrip.date"></div>
+                <div class="form-group"><label class="form-label">Тип рейса</label><select class="form-select" x-model="formTrip.type"><option>Городской</option><option>Междугородний</option></select></div>
+                <div class="form-group"><label class="form-label">Машина</label><select class="form-select" x-model="formTrip.vehicle"><option value="">—</option><template x-for="v in vehicles" :key="v.plate"><option :value="v.plate" x-text="v.plate + ' ' + v.model"></option></template></select></div>
+                <div class="form-group"><label class="form-label">Водитель</label><select class="form-select" x-model="formTrip.driver"><option value="">—</option><template x-for="d in drivers" :key="d.name"><option :value="d.name" x-text="d.name"></option></template></select></div>
+                <div class="form-group" x-show="formTrip.type === 'Междугородний'"><label class="form-label">Маршрут</label><select class="form-select" x-model="formTrip.route"><option value="">—</option><template x-for="r in routes" :key="r.name"><option :value="r.name" x-text="r.name + ' (' + r.distance + ' км)'"></option></template></select></div>
+                <div class="form-group" x-show="formTrip.type === 'Городской'"><label class="form-label">Город</label><input type="text" class="form-input" x-model="formTrip.route" placeholder="Москва"></div>
+                <div class="form-group"><label class="form-label">Пробег план (км)</label><input type="number" class="form-input" x-model="formTrip.plan_km" placeholder="100"></div>
+                <button class="btn btn-primary" @click="addTrip()">Добавить рейс</button>
+            </div>
+        </div>
+        
+        <!-- МОДАЛКА: Машина -->
+        <div class="modal-overlay" x-show="modal === 'vehicle'" @click.self="modal = null">
+            <div class="modal">
+                <div class="modal-title">Новая машина</div>
+                <div class="form-group"><label class="form-label">Госномер</label><input type="text" class="form-input" x-model="formVehicle.plate"></div>
+                <div class="form-group"><label class="form-label">Марка/модель</label><input type="text" class="form-input" x-model="formVehicle.model"></div>
+                <div class="form-group"><label class="form-label">Грузоподъёмность (т)</label><input type="number" class="form-input" x-model="formVehicle.capacity" step="0.1"></div>
+                <div class="form-group"><label class="form-label">Норма расхода (л/100км)</label><input type="number" class="form-input" x-model="formVehicle.fuel_rate" step="0.1"></div>
+                <div class="form-group"><label class="form-label">Ставка аморт. (₽/км)</label><input type="number" class="form-input" x-model="formVehicle.amort_rate" step="0.01"></div>
+                <button class="btn btn-primary" @click="addVehicle()">Добавить</button>
+            </div>
+        </div>
+        
+        <!-- МОДАЛКА: Водитель -->
+        <div class="modal-overlay" x-show="modal === 'driver'" @click.self="modal = null">
+            <div class="modal">
+                <div class="modal-title">Новый водитель</div>
+                <div class="form-group"><label class="form-label">ФИО</label><input type="text" class="form-input" x-model="formDriver.name"></div>
+                <div class="form-group"><label class="form-label">Телефон</label><input type="text" class="form-input" x-model="formDriver.phone"></div>
+                <div class="form-group"><label class="form-label">Ставка за рейс (₽)</label><input type="number" class="form-input" x-model="formDriver.rate"></div>
+                <button class="btn btn-primary" @click="addDriver()">Добавить</button>
+            </div>
+        </div>
+        
+        <!-- МОДАЛКА: Маршрут -->
+        <div class="modal-overlay" x-show="modal === 'route'" @click.self="modal = null">
+            <div class="modal">
+                <div class="modal-title">Новый маршрут</div>
+                <div class="form-group"><label class="form-label">Название</label><input type="text" class="form-input" x-model="formRoute.name" placeholder="Москва → СПб"></div>
+                <div class="form-group"><label class="form-label">Откуда</label><input type="text" class="form-input" x-model="formRoute.from"></div>
+                <div class="form-group"><label class="form-label">Куда</label><input type="text" class="form-input" x-model="formRoute.to"></div>
+                <div class="form-group"><label class="form-label">Расстояние (км)</label><input type="number" class="form-input" x-model="formRoute.distance"></div>
+                <button class="btn btn-primary" @click="addRoute()">Добавить</button>
+            </div>
+        </div>
+        
+    </main>
+    
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz62R4Rv7y_ai7hzmYiy4qPPdSfzV3arSh3i2hW0YeWXbqjimJeBf27bhBTPp8zj9nveg/execyfpdfnm ';
+        
+        function app() {
+            return {
+                tab: 'board', modal: null, trips: [], orders: [], drivers: [], vehicles: [], routes: [], costs: [],
+                selectedTrip: '', today: new Date().toLocaleDateString('ru-RU'),
+                formTrip: { date: '', type: 'Городской', vehicle: '', driver: '', route: '', plan_km: 100 },
+                formVehicle: { plate: '', model: '', capacity: '', fuel_rate: '', amort_rate: '' },
+                formDriver: { name: '', phone: '', rate: '' },
+                formRoute: { name: '', from: '', to: '', distance: '' },
+                
+                async init() { await this.loadData(); },
+                
+                async loadData() {
+                    try {
+                        const r = await fetch(SCRIPT_URL + '?type=all&_cb=' + Date.now());
+                        const data = await r.json();
+                        this.trips = data.trips || [];
+                        this.orders = data.orders || [];
+                        this.drivers = data.drivers || [];
+                        this.vehicles = data.vehicles || [];
+                        this.routes = data.routes || [];
+                        this.costs = data.costs || [];
+                    } catch(e) { console.error(e); }
+                },
+                
+                tripsByStatus(status) { return this.trips.filter(t => t.status === status); },
+                
+                loadPercent(trip) {
+                    const orders = this.orders.filter(o => o.trip_id === trip.id);
+                    const totalWeight = orders.reduce((a, o) => a + (Number(o.weight) || 0), 0);
+                    const vehicle = this.vehicles.find(v => v.plate === trip.vehicle);
+                    if (!vehicle || !vehicle.capacity) return 0;
+                    return Math.round(totalWeight / (Number(vehicle.capacity) * 1000) * 100);
+                },
+                
+                loadColor(trip) {
+                    const p = this.loadPercent(trip);
+                    if (p >= 80) return 'load-green';
+                    if (p >= 50) return 'load-yellow';
+                    return 'load-red';
+                },
+                
+                showModal(type) { this.modal = type; },
+                
+                showTripDetail(id) { alert('Детали рейса #' + id + ' — будет отдельная карточка'); },
+                
+                async addTrip() {
+                    const id = 'T' + Date.now();
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                        action: 'add_trip', id, date: this.formTrip.date, type: this.formTrip.type,
+                        vehicle: this.formTrip.vehicle, driver: this.formTrip.driver,
+                        route: this.formTrip.route, plan_km: this.formTrip.plan_km
+                    }) });
+                    this.modal = null;
+                    this.formTrip = { date: '', type: 'Городской', vehicle: '', driver: '', route: '', plan_km: 100 };
+                    await this.loadData();
+                },
+                
+                async addVehicle() {
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                        action: 'add_vehicle', ...this.formVehicle
+                    }) });
+                    this.modal = null;
+                    this.formVehicle = { plate: '', model: '', capacity: '', fuel_rate: '', amort_rate: '' };
+                    await this.loadData();
+                },
+                
+                async addDriver() {
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                        action: 'add_driver', ...this.formDriver
+                    }) });
+                    this.modal = null;
+                    this.formDriver = { name: '', phone: '', rate: '' };
+                    await this.loadData();
+                },
+                
+                async addRoute() {
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                        action: 'add_route', ...this.formRoute
+                    }) });
+                    this.modal = null;
+                    this.formRoute = { name: '', from: '', to: '', distance: '' };
+                    await this.loadData();
+                },
+                
+                printWaybill() {
+                    if (!this.selectedTrip) return;
+                    window.print();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
