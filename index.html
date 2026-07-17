@@ -116,7 +116,7 @@
             </div>
         </div>
         
-        <!-- МОДАЛКА: Новый рейс (без изменений) -->
+        <!-- МОДАЛКА: Новый рейс -->
         <div class="modal-overlay" x-show="modal === 'trip'" @click.self="null"><div class="modal"><button class="modal-close" @click="modal = null">✕</button><div class="modal-title">Новый рейс</div>
             <div class="form-row"><div class="form-group"><label class="form-label">Дата рейса *</label><input type="date" class="form-input" :class="!formTrip.date && showErrors ? 'error' : ''" x-model="formTrip.date"></div><div class="form-group"><label class="form-label">Тип рейса *</label><select class="form-select" x-model="formTrip.type"><option>Городской</option><option>Междугородний</option></select></div></div>
             <div class="form-row"><div class="form-group"><label class="form-label">Машина *</label><select class="form-select" :class="!formTrip.vehicle && showErrors ? 'error' : ''" x-model="formTrip.vehicle" @change="onVehicleChange()"><option value="">— Справочник —</option><template x-for="v in vehicles" :key="v.plate"><option :value="v.plate" x-text="v.plate + ' ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></option></template><option value="__other__">Наёмная</option></select></div><div class="form-group" x-show="formTrip.vehicle === '__other__'"><label class="form-label">Марка/номер *</label><input type="text" class="form-input" x-model="formTrip.vehicle_name"></div></div>
@@ -138,7 +138,7 @@
             <div class="modal-title" x-text="'Рейс ' + detailTrip?.id"></div>
             <template x-if="detailTrip">
                 <div>
-                    <div class="detail-row"><span class="detail-label">Дата</span><input type="date" class="detail-value" x-model="detailTrip.date" @change="saveDetailChange()"></div>
+                    <div class="detail-row"><span class="detail-label">Дата</span><input type="date" class="detail-value" x-model="detailTrip.date" @change="saveDetailDate()"></div>
                     <div class="detail-row"><span class="detail-label">Тип</span><span class="detail-value" x-text="detailTrip.type"></span></div>
                     
                     <!-- МАШИНА -->
@@ -258,7 +258,7 @@
                 loadColor(t) { const p = this.loadPercent(t); if (p > 100) return 'load-orange'; if (p >= 81) return 'load-green'; if (p >= 51) return 'load-yellow'; return 'load-red'; },
                 
                 showModal(type) { this.showErrors = false; this.modal = type; },
-                showTripDetail(id) { this.detailTrip = this.trips.find(t => t.id === id); if (this.detailTrip) this.detailTrip = { ...this.detailTrip }; this.editing = { vehicle: false, driver: false }; this.modal = 'detail'; },
+                showTripDetail(id) { const t = this.trips.find(t => t.id === id); this.detailTrip = t ? { ...t, date: t.date || '' } : null; this.editing = { vehicle: false, driver: false }; this.modal = 'detail'; },
                 nextTripId() { this.tripCounter++; return 'Р-' + String(this.tripCounter).padStart(3,'0'); },
                 
                 editField(field) {
@@ -290,6 +290,15 @@
                         this.detailTrip.driver = this.editForm.driver === '__other__' ? (this.editForm.driver_name || 'Наёмный') : this.editForm.driver;
                     }
                     await this.saveDetailChange();
+                    const idx = this.trips.findIndex(t => t.id === this.detailTrip.id);
+                    if (idx >= 0) {
+                        this.trips[idx].vehicle = this.detailTrip.vehicle;
+                        this.trips[idx].driver = this.detailTrip.driver;
+                        this.trips[idx].vehicle_volume = this.detailTrip.vehicle_volume;
+                        this.trips[idx].rate = this.detailTrip.rate;
+                        this.trips[idx].plan_km = this.detailTrip.plan_km;
+                        this.trips[idx].date = this.detailTrip.date;
+                    }
                     this.editing[field] = false;
                     this.saving = false;
                     this.toast = 'Сохранено'; setTimeout(() => this.toast = '', 2000);
@@ -311,6 +320,7 @@
                         plan_km: this.detailTrip.plan_km
                     }) });
                 },
+                async saveDetailDate() { await this.saveDetailChange(); },
                 
                 async addTrip() {
                     if (!this.formTrip.date || !this.formTrip.vehicle || !this.formTrip.driver || !this.formTrip.rate) { this.showErrors = true; return; }
@@ -360,9 +370,7 @@
                 async deleteTrip(id) {
                     if (!confirm('Удалить рейс ' + id + '?')) return;
                     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_trip', id }) });
-                    for (const o of this.ordersByTrip(id)) {
-                        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_order', id: o.id }) });
-                    }
+                    for (const o of this.ordersByTrip(id)) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_order', id: o.id }) }); }
                     this.modal = null; await this.loadData();
                 },
                 
@@ -375,15 +383,11 @@
                 async addOrderToTrip(tripId) {
                     const id = prompt('ID заказа:');
                     if (!id) return;
-                    
-                    // Проверяем существование на сервере
-                    const r = await fetch(SCRIPT_URL + '?type=orders&_cb=' + Date.now());
-                    const data = await r.json();
-                    const existingOrder = (data || []).find(o => o.id === id);
-                    
-                    if (existingOrder) {
-                        const oldTrip = this.trips.find(t => t.id === existingOrder.trip_id);
-                        const msg = oldTrip ? 'Заказ ' + id + ' сейчас в рейсе ' + oldTrip.id + '. Перенести?' : 'Заказ ' + id + ' существует. Перенести?';
+                    const r = await fetch(`${SCRIPT_URL}?type=check_order&id=${id}&_cb=${Date.now()}`);
+                    const orderStatus = await r.json();
+                    if (orderStatus && orderStatus.found) {
+                        const oldTripId = orderStatus.trip_id;
+                        const msg = oldTripId ? `Заказ ${id} сейчас в рейсе ${oldTripId}. Перенести в текущий рейс?` : `Заказ ${id} существует. Добавить в рейс?`;
                         if (!confirm(msg)) return;
                         await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'move_order', id, new_trip_id: tripId }) });
                         await this.loadData();
@@ -391,7 +395,6 @@
                         this.toast = 'Заказ ' + id + ' перенесён'; setTimeout(() => this.toast = '', 2000);
                         return;
                     }
-                    
                     const address = prompt('Адрес:');
                     if (!address) return;
                     const contact = prompt('Контакт:') || '';
