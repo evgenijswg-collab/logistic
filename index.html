@@ -22,11 +22,14 @@
         .tab { padding: 8px 16px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer; background: var(--white); }
         .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-        .column { background: #f0f1f3; border-radius: 8px; padding: 12px; min-height: 200px; }
+        .column { background: #f0f1f3; border-radius: 8px; padding: 12px; min-height: 200px; transition: background 0.2s; }
+        .column.drag-over { background: #dbeafe; }
         .column-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; padding: 4px 8px; border-radius: 4px; text-align: center; }
         .col-forming { background: #e5e7eb; } .col-loading { background: #dbeafe; color: #1e40af; }
         .col-transit { background: #d1fae5; color: #065f46; } .col-done { background: #e5e7eb; color: #374151; }
-        .trip-card { background: var(--white); border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid var(--border); font-size: 11px; }
+        .trip-card { background: var(--white); border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: grab; border: 1px solid var(--border); font-size: 11px; transition: transform 0.15s, box-shadow 0.15s; }
+        .trip-card:active { cursor: grabbing; }
+        .trip-card.dragging { opacity: 0.5; transform: scale(0.95); }
         .trip-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.1); }
         .trip-card .id { font-weight: 600; } .trip-card .route { color: var(--text2); margin: 4px 0; }
         .trip-card .load { height: 6px; border-radius: 3px; background: #e5e7eb; margin-top: 4px; overflow: hidden; }
@@ -89,18 +92,29 @@
         
         <div x-show="tab === 'board'">
             <div class="board">
-                <div class="column"><div class="column-title col-forming">📋 Формируется</div>
-                    <template x-for="t in tripsByStatus('Формируется')" :key="t.id"><div class="trip-card" @click="showTripDetail(t.id)"><div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div><div class="route" x-text="t.route"></div><div x-text="t.vehicle + ' | ' + t.driver"></div><div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'"></div></div><div style="font-size:10px;color:var(--text2);" x-text="loadPercent(t) + '% | ' + (ordersByTrip(t.id).length || 0) + ' адресов'"></div></div></template>
-                </div>
-                <div class="column"><div class="column-title col-loading">🔵 Загрузка</div>
-                    <template x-for="t in tripsByStatus('Загрузка')" :key="t.id"><div class="trip-card" @click="showTripDetail(t.id)"><div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div><div class="route" x-text="t.route"></div><div x-text="t.vehicle + ' | ' + t.driver"></div><div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'"></div></div></div></template>
-                </div>
-                <div class="column"><div class="column-title col-transit">🟢 В пути</div>
-                    <template x-for="t in tripsByStatus('В пути')" :key="t.id"><div class="trip-card" @click="showTripDetail(t.id)"><div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div><div class="route" x-text="t.route"></div><div x-text="t.vehicle + ' | ' + t.driver"></div><div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'"></div></div></div></template>
-                </div>
-                <div class="column"><div class="column-title col-done">✅ Завершён</div>
-                    <template x-for="t in tripsByStatus('Завершён')" :key="t.id"><div class="trip-card" @click="showTripDetail(t.id)"><div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div><div class="route" x-text="t.route"></div><div x-text="t.vehicle + ' | ' + t.driver"></div><div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'"></div></div></div></template>
-                </div>
+                <template x-for="col in columns" :key="col.status">
+                    <div class="column" 
+                         :class="dragOverStatus === col.status ? 'drag-over' : ''"
+                         @dragover.prevent="dragOverStatus = col.status"
+                         @dragleave="dragOverStatus = null"
+                         @drop="dropTrip(col.status)">
+                        <div class="column-title" :class="col.titleClass" x-text="col.title"></div>
+                        <template x-for="t in tripsByStatus(col.status)" :key="t.id">
+                            <div class="trip-card" 
+                                 :class="draggedTripId === t.id ? 'dragging' : ''"
+                                 draggable="true"
+                                 @dragstart="dragStart(t.id)"
+                                 @dragend="dragEnd()"
+                                 @click.stop="showTripDetail(t.id)">
+                                <div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div>
+                                <div class="route" x-text="t.route"></div>
+                                <div x-text="t.vehicle + ' | ' + t.driver"></div>
+                                <div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'"></div></div>
+                                <div style="font-size:10px;color:var(--text2);" x-text="loadPercent(t) + '% | ' + (ordersByTrip(t.id).length || 0) + ' адресов'"></div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
         </div>
         
@@ -133,7 +147,7 @@
             <button class="btn btn-primary" style="margin-top:12px;width:100%;" @click="addTrip()" :disabled="saving"><span x-show="!saving">Добавить рейс</span><span x-show="saving">Сохранение...</span></button>
         </div></div>
         
-        <!-- МОДАЛКА: Детали рейса -->
+        <!-- МОДАЛКА: Детали рейса (без изменений) -->
         <div class="modal-overlay" x-show="modal === 'detail'" @click.self="modal = null"><div class="modal">
             <button class="modal-close" @click="modal = null">✕</button>
             <div class="modal-title" x-text="'Рейс ' + detailTrip?.id"></div>
@@ -233,6 +247,41 @@
                 formDriver: { name: '', phone: '', rate: '' },
                 formRoute: { name: '', from: '', to: '', distance: '' },
                 
+                // Drag & drop
+                draggedTripId: null,
+                dragOverStatus: null,
+                columns: [
+                    { status: 'Формируется', title: '📋 Формируется', titleClass: 'col-forming' },
+                    { status: 'Загрузка', title: '🔵 Загрузка', titleClass: 'col-loading' },
+                    { status: 'В пути', title: '🟢 В пути', titleClass: 'col-transit' },
+                    { status: 'Завершён', title: '✅ Завершён', titleClass: 'col-done' }
+                ],
+                
+                dragStart(tripId) {
+                    this.draggedTripId = tripId;
+                },
+                dragEnd() {
+                    this.draggedTripId = null;
+                    this.dragOverStatus = null;
+                },
+                async dropTrip(newStatus) {
+                    const tripId = this.draggedTripId;
+                    this.dragOverStatus = null;
+                    this.draggedTripId = null;
+                    if (!tripId) return;
+                    
+                    const trip = this.trips.find(t => t.id === tripId);
+                    if (!trip || trip.status === newStatus) return;
+                    
+                    // Обновляем статус локально (мгновенно)
+                    trip.status = newStatus;
+                    if (this.detailTrip?.id === tripId) this.detailTrip.status = newStatus;
+                    
+                    // Отправляем на сервер
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_trip_status', id: tripId, status: newStatus }) });
+                    this.toast = 'Рейс ' + tripId + ' → ' + newStatus; setTimeout(() => this.toast = '', 2000);
+                },
+                
                 async init() { await this.loadData(); },
                 async loadData() {
                     this.loading = true;
@@ -295,9 +344,7 @@
                                 await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'move_order', id: a.id, new_trip_id: id }) });
                             }
                             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_order', id: a.id, trip_id: id, address: a.address, contact: a.contact, phone: phoneRaw, volume: a.volume, sequence: i + 1, status: 'Новый' }) });
-                            if (oldTripId && oldTripId !== id) {
-                                await this.updateRoute(oldTripId);
-                            }
+                            if (oldTripId && oldTripId !== id) { await this.updateRoute(oldTripId); }
                         }
                     }
                     this.modal = null;
