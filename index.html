@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,1220 +8,278 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --bg: #f5f6f8;
-            --white: #fff;
-            --border: #e2e5eb;
-            --text: #1a1a1a;
-            --text2: #6b7280;
-            --primary: #2563eb;
-            --danger: #dc2626;
-            --warning: #d97706;
-            --success: #059669;
-            --orange: #f97316;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 13px;
-        }
-
-        .header {
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 0 24px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .header-title {
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .btn {
-            padding: 7px 14px;
-            border: none;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: #fff;
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: var(--white);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-sm {
-            padding: 4px 8px;
-            font-size: 11px;
-        }
-
-        .btn-xs {
-            padding: 2px 6px;
-            font-size: 10px;
-        }
-
-        .main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px 24px;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab {
-            padding: 8px 16px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            background: var(--white);
-        }
-
-        .tab.active {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-        }
-
-        .board {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .column {
-            background: #f0f1f3;
-            border-radius: 8px;
-            padding: 12px;
-            min-height: 200px;
-            transition: background 0.2s;
-        }
-
-        .column.drag-over {
-            background: #dbeafe;
-        }
-
-        .column-title {
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 12px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        .col-forming {
-            background: #e5e7eb;
-        }
-
-        .col-loading {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .col-transit {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .col-done {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .trip-card {
-            background: var(--white);
-            border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 8px;
-            cursor: grab;
-            border: 1px solid var(--border);
-            font-size: 11px;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-
-        .trip-card:active {
-            cursor: grabbing;
-        }
-
-        .trip-card.dragging {
-            opacity: 0.5;
-            transform: scale(0.95);
-        }
-
-        .trip-card:hover {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
-        }
-
-        .trip-card .id {
-            font-weight: 600;
-        }
-
-        .trip-card .route {
-            color: var(--text2);
-            margin: 4px 0;
-        }
-
-        .trip-card .load {
-            height: 6px;
-            border-radius: 3px;
-            background: #e5e7eb;
-            margin-top: 4px;
-            overflow: hidden;
-        }
-
-        .trip-card .load-fill {
-            height: 100%;
-            border-radius: 3px;
-            max-width: 100%;
-        }
-
-        .load-green {
-            background: var(--success);
-        }
-
-        .load-yellow {
-            background: var(--warning);
-        }
-
-        .load-red {
-            background: var(--danger);
-        }
-
-        .load-orange {
-            background: var(--orange);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, .3);
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal {
-            background: var(--white);
-            border-radius: 8px;
-            padding: 24px;
-            width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
-            position: relative;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: var(--text2);
-        }
-
-        .modal-close:hover {
-            color: var(--danger);
-        }
-
-        .modal-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            padding-right: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 10px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 11px;
-            color: var(--text2);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .form-input,
-        .form-select {
-            width: 100%;
-            padding: 7px 10px;
-            border: 1px solid var(--border);
-            border-radius: 5px;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .form-input:focus,
-        .form-select:focus {
-            border-color: var(--primary);
-        }
-
-        .form-input.error {
-            border-color: var(--danger);
-        }
-
-        .form-row {
-            display: flex;
-            gap: 12px;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-        }
-
-        .address-header {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 6px;
-            font-size: 10px;
-            color: var(--text2);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .address-header span {
-            display: block;
-        }
-
-        .address-header .h-seq {
-            width: 40px;
-        }
-
-        .address-header .h-id {
-            width: 80px;
-        }
-
-        .address-header .h-addr {
-            flex: 2;
-        }
-
-        .address-header .h-contact {
-            flex: 1;
-        }
-
-        .address-header .h-phone {
-            flex: 1;
-        }
-
-        .address-header .h-vol {
-            width: 70px;
-        }
-
-        .address-header .h-edit {
-            width: 30px;
-        }
-
-        .address-header .h-del {
-            width: 30px;
-        }
-
-        .address-row {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 6px;
-            align-items: center;
-        }
-
-        .address-row input {
-            padding: 5px 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-            outline: none;
-        }
-
-        .address-row input:focus {
-            border-color: var(--primary);
-        }
-
-        .address-row span {
-            font-size: 11px;
-            display: block;
-        }
-
-        .address-row .addr-seq {
-            width: 40px;
-        }
-
-        .address-row .addr-id {
-            width: 80px;
-        }
-
-        .address-row .addr-address {
-            flex: 2;
-        }
-
-        .address-row .addr-contact {
-            flex: 1;
-        }
-
-        .address-row .addr-phone {
-            flex: 1;
-        }
-
-        .address-row .addr-vol {
-            width: 70px;
-        }
-
-        .address-row .addr-edit {
-            width: 30px;
-            text-align: center;
-        }
-
-        .address-row .addr-del {
-            width: 30px;
-            text-align: center;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: var(--text2);
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--success);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 13px;
-            z-index: 30;
-            cursor: pointer;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid #f0f1f3;
-            font-size: 12px;
-        }
-
-        .detail-label {
-            color: var(--text2);
-            min-width: 120px;
-        }
-
-        .detail-value {
-            font-weight: 500;
-            flex: 1;
-        }
-
-        .detail-row input,
-        .detail-row select {
-            padding: 4px 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-            outline: none;
-        }
-
-        .detail-row input:focus,
-        .detail-row select:focus {
-            border-color: var(--primary);
-        }
-
-        .edit-btn {
-            background: none;
-            border: none;
-            color: var(--text2);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 0 4px;
-        }
-
-        .edit-btn:hover {
-            color: var(--primary);
-        }
-
-        .inline-edit {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            flex: 1;
-        }
-
-        .inline-edit select {
-            flex: 1;
-            padding: 4px 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .inline-edit input {
-            flex: 1;
-            padding: 4px 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .cost-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 11px;
-            border-bottom: 1px solid #f0f1f3;
-        }
-
-        .cost-auto {
-            color: var(--text2);
-            font-style: italic;
-        }
-
-        .cost-table {
-            border-collapse: collapse;
-        }
-
-        .cost-table th {
-            background: #f8fafc;
-            border-bottom: 2px solid var(--border);
-            padding: 8px 10px;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text2);
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .cost-table th:first-child,
-        .cost-table th:nth-child(2),
-        .cost-table th:nth-child(3),
-        .cost-table th:nth-child(4) {
-            text-align: left;
-        }
-
-        .cost-table td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #f0f1f3;
-            text-align: right;
-            white-space: nowrap;
-            font-size: 12px;
-        }
-
-        .cost-table td:first-child,
-        .cost-table td:nth-child(2),
-        .cost-table td:nth-child(3),
-        .cost-table td:nth-child(4) {
-            text-align: left;
-        }
-
-        .cost-table .total-row td {
-            font-weight: 700;
-            border-top: 2px solid var(--border);
-            background: #fafbfc;
-        }
-
-        .waybill {
-            display: none;
-            padding: 40px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .waybill h1 {
-            text-align: center;
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .waybill .subtitle {
-            text-align: center;
-            color: var(--text2);
-            margin-bottom: 24px;
-        }
-
-        .waybill .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
-        .waybill .info-label {
-            color: var(--text2);
-        }
-
-        .waybill table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-        }
-
-        .waybill th,
-        .waybill td {
-            border: 1px solid #000;
-            padding: 6px 8px;
-            font-size: 12px;
-            text-align: left;
-        }
-
-        .waybill th {
-            background: #f0f0f0;
-        }
-
-        .waybill .signatures {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 24px;
-        }
-
-        .waybill .signatures div {
-            flex: 1;
-        }
-
-        .waybill .signatures .line {
-            border-bottom: 1px solid #000;
-            margin-top: 30px;
-            margin-bottom: 4px;
-            width: 200px;
-        }
-
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            .waybill,
-            .waybill * {
-                visibility: visible;
-            }
-
-            .waybill {
-                display: block;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: #fff;
-            }
-
-            .waybill .no-print {
-                display: none;
-            }
-        }
+        :root { --bg: #f5f6f8; --white: #fff; --border: #e2e5eb; --text: #1a1a1a; --text2: #6b7280; --primary: #2563eb; --danger: #dc2626; --warning: #d97706; --success: #059669; --orange: #f97316; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; }
+        .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+        .header-title { font-size: 15px; font-weight: 600; }
+        .btn { padding: 7px 14px; border: none; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: #fff; } .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-secondary { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+        .btn-sm { padding: 4px 8px; font-size: 11px; } .btn-xs { padding: 2px 6px; font-size: 10px; }
+        .main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 8px 16px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer; background: var(--white); }
+        .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .column { background: #f0f1f3; border-radius: 8px; padding: 12px; min-height: 200px; transition: background 0.2s; }
+        .column.drag-over { background: #dbeafe; }
+        .column-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; padding: 4px 8px; border-radius: 4px; text-align: center; }
+        .col-forming { background: #e5e7eb; } .col-loading { background: #dbeafe; color: #1e40af; }
+        .col-transit { background: #d1fae5; color: #065f46; } .col-done { background: #e5e7eb; color: #374151; }
+        .trip-card { background: var(--white); border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: grab; border: 1px solid var(--border); font-size: 11px; transition: transform 0.15s, box-shadow 0.15s; }
+        .trip-card:active { cursor: grabbing; } .trip-card.dragging { opacity: 0.5; transform: scale(0.95); }
+        .trip-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+        .trip-card .id { font-weight: 600; } .trip-card .route { color: var(--text2); margin: 4px 0; }
+        .trip-card .load { height: 6px; border-radius: 3px; background: #e5e7eb; margin-top: 4px; overflow: hidden; }
+        .trip-card .load-fill { height: 100%; border-radius: 3px; max-width: 100%; }
+        .load-green { background: var(--success); } .load-yellow { background: var(--warning); } .load-red { background: var(--danger); } .load-orange { background: var(--orange); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 20; display: flex; align-items: center; justify-content: center; }
+        .modal { background: var(--white); border-radius: 8px; padding: 24px; width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); position: relative; }
+        .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text2); }
+        .modal-close:hover { color: var(--danger); }
+        .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-right: 24px; }
+        .form-group { margin-bottom: 10px; }
+        .form-label { display: block; font-size: 11px; color: var(--text2); text-transform: uppercase; margin-bottom: 4px; }
+        .form-input, .form-select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; outline: none; }
+        .form-input:focus, .form-select:focus { border-color: var(--primary); }
+        .form-input.error { border-color: var(--danger); }
+        .form-row { display: flex; gap: 12px; } .form-row .form-group { flex: 1; }
+        .address-header { display: flex; gap: 6px; margin-bottom: 6px; font-size: 10px; color: var(--text2); text-transform: uppercase; font-weight: 600; }
+        .address-header span { display: block; } .address-header .h-seq { width: 40px; } .address-header .h-id { width: 80px; } .address-header .h-addr { flex: 2; } .address-header .h-contact { flex: 1; } .address-header .h-phone { flex: 1; } .address-header .h-vol { width: 70px; } .address-header .h-edit { width: 30px; } .address-header .h-del { width: 30px; }
+        .address-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+        .address-row input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; outline: none; }
+        .address-row input:focus { border-color: var(--primary); }
+        .address-row span { font-size: 11px; display: block; }
+        .address-row .addr-seq { width: 40px; } .address-row .addr-id { width: 80px; } .address-row .addr-address { flex: 2; } .address-row .addr-contact { flex: 1; } .address-row .addr-phone { flex: 1; } .address-row .addr-vol { width: 70px; } .address-row .addr-edit { width: 30px; text-align: center; } .address-row .addr-del { width: 30px; text-align: center; }
+        .empty { text-align: center; padding: 40px; color: var(--text2); }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #fff; padding: 10px 20px; border-radius: 6px; font-size: 13px; z-index: 30; cursor: pointer; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f1f3; font-size: 12px; }
+        .detail-label { color: var(--text2); min-width: 120px; }
+        .detail-value { font-weight: 500; flex: 1; }
+        .detail-row input, .detail-row select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; outline: none; }
+        .detail-row input:focus, .detail-row select:focus { border-color: var(--primary); }
+        .edit-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 14px; padding: 0 4px; }
+        .edit-btn:hover { color: var(--primary); }
+        .inline-edit { display: flex; gap: 6px; align-items: center; flex: 1; }
+        .inline-edit select { flex: 1; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+        .inline-edit input { flex: 1; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+        .cost-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; border-bottom: 1px solid #f0f1f3; }
+        .cost-auto { color: var(--text2); font-style: italic; }
+        .cost-table { border-collapse: collapse; }
+        .cost-table th { background: #f8fafc; border-bottom: 2px solid var(--border); padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); text-align: right; white-space: nowrap; }
+        .cost-table th:first-child, .cost-table th:nth-child(2), .cost-table th:nth-child(3), .cost-table th:nth-child(4) { text-align: left; }
+        .cost-table td { padding: 8px 10px; border-bottom: 1px solid #f0f1f3; text-align: right; white-space: nowrap; font-size: 12px; }
+        .cost-table td:first-child, .cost-table td:nth-child(2), .cost-table td:nth-child(3), .cost-table td:nth-child(4) { text-align: left; }
+        .cost-table .total-row td { font-weight: 700; border-top: 2px solid var(--border); background: #fafbfc; }
+        .waybill { display: none; padding: 40px; font-size: 14px; line-height: 1.6; }
+        .waybill h1 { text-align: center; font-size: 20px; margin-bottom: 8px; }
+        .waybill .subtitle { text-align: center; color: var(--text2); margin-bottom: 24px; }
+        .waybill .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .waybill .info-label { color: var(--text2); }
+        .waybill table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        .waybill th, .waybill td { border: 1px solid #000; padding: 6px 8px; font-size: 12px; text-align: left; }
+        .waybill th { background: #f0f0f0; }
+        .waybill .signatures { display: flex; justify-content: space-between; margin-top: 24px; }
+        .waybill .signatures div { flex: 1; }
+        .waybill .signatures .line { border-bottom: 1px solid #000; margin-top: 30px; margin-bottom: 4px; width: 200px; }
+        @media print { body * { visibility: hidden; } .waybill, .waybill * { visibility: visible; } .waybill { display: block; position: absolute; left: 0; top: 0; width: 100%; background: #fff; } .waybill .no-print { display: none; } }
     </style>
 </head>
-
 <body x-data="app()" x-init="init()">
-
+    
     <header class="header no-print">
         <span class="header-title">🚚 Рабочее место логиста</span>
         <div style="display: flex; gap: 8px; align-items: center;">
             <span style="font-size: 12px; color: var(--text2);" x-text="'Сегодня: ' + today"></span>
             <button class="btn btn-primary btn-sm" @click="showModal('trip')">+ Новый рейс</button>
-            <button class="btn btn-sm" :class="loading ? 'btn-primary' : 'btn-secondary'" @click="loadData()"
-                :disabled="loading">
+            <button class="btn btn-sm" :class="loading ? 'btn-primary' : 'btn-secondary'" @click="loadData()" :disabled="loading">
                 <span x-text="loading ? 'Обновление...' : 'Обновить'"></span>
             </button>
         </div>
     </header>
-
+    
     <main class="main no-print">
         <div class="tabs">
             <button class="tab" :class="tab === 'board' ? 'active' : ''" @click="tab = 'board'">📋 Доска рейсов</button>
             <button class="tab" :class="tab === 'reports' ? 'active' : ''" @click="tab = 'reports'">📊 Отчёты</button>
-            <button class="tab" :class="tab === 'waybill' ? 'active' : ''" @click="tab = 'waybill'">🧾 Путевой
-                лист</button>
+            <button class="tab" :class="tab === 'waybill' ? 'active' : ''" @click="tab = 'waybill'">🧾 Путевой лист</button>
             <button class="tab" :class="tab === 'costs' ? 'active' : ''" @click="tab = 'costs'">⛽ Затраты</button>
             <button class="tab" :class="tab === 'refs' ? 'active' : ''" @click="tab = 'refs'">📚 Справочники</button>
         </div>
-
+        
         <div x-show="tab === 'board'">
             <div class="board">
                 <template x-for="col in columns" :key="col.status">
-                    <div class="column" :class="dragOverStatus === col.status ? 'drag-over' : ''"
-                        @dragover.prevent="dragOverStatus = col.status" @dragleave="dragOverStatus = null"
-                        @drop="dropTrip(col.status)">
+                    <div class="column" :class="dragOverStatus === col.status ? 'drag-over' : ''" @dragover.prevent="dragOverStatus = col.status" @dragleave="dragOverStatus = null" @drop="dropTrip(col.status)">
                         <div class="column-title" :class="col.titleClass" x-text="col.title"></div>
-                        <template x-for="t in tripsByStatus(col.status)" :key="t.id">
-                            <div class="trip-card" :class="draggedTripId === t.id ? 'dragging' : ''" draggable="true"
-                                @dragstart="dragStart(t.id)" @dragend="dragEnd()" @click.stop="showTripDetail(t.id)">
-                                <div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div>
-                                <div class="route" x-text="t.route"></div>
-                                <div x-text="t.vehicle + ' | ' + t.driver"></div>
-                                <div class="load">
-                                    <div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'">
-                                    </div>
-                                </div>
-                                <div style="font-size:10px;color:var(--text2);"
-                                    x-text="loadPercent(t) + '% | ' + (ordersByTrip(t.id).length || 0) + ' адресов'">
-                                </div>
-                            </div>
-                        </template>
+                        <template x-for="t in tripsByStatus(col.status)" :key="t.id"><div class="trip-card" :class="draggedTripId === t.id ? 'dragging' : ''" draggable="true" @dragstart="dragStart(t.id)" @dragend="dragEnd()" @click.stop="showTripDetail(t.id)"><div class="id" x-text="'Рейс ' + t.id + ' | ' + (t.date || '—')"></div><div class="route" x-text="t.route"></div><div x-text="t.vehicle + ' | ' + t.driver"></div><div class="load"><div class="load-fill" :class="loadColor(t)" :style="'width:' + loadWidth(t) + '%'"></div></div><div style="font-size:10px;color:var(--text2);" x-text="loadPercent(t) + '% | ' + (ordersByTrip(t.id).length || 0) + ' адресов'"></div></div></template>
                     </div>
                 </template>
             </div>
         </div>
-
-        <div x-show="tab === 'reports'">
-            <p style="padding:20px;color:var(--text2);">Отчёты будут здесь</p>
-        </div>
-        <div x-show="tab === 'waybill'">
-            <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;">
-                <p>Выберите рейс</p><select class="form-select" x-model="selectedTrip" style="width:300px;">
-                    <option value="">—</option><template x-for="t in trips" :key="t.id">
-                        <option :value="t.id" x-text="'Рейс ' + t.id + ' — ' + (t.date || '—')"></option>
-                    </template>
-                </select><button class="btn btn-primary btn-sm" style="margin-top:8px;"
-                    @click="printWaybill()">Печать</button>
-            </div>
-        </div>
-
+        
+        <div x-show="tab === 'reports'"><p style="padding:20px;color:var(--text2);">Отчёты будут здесь</p></div>
+        <div x-show="tab === 'waybill'"><div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;"><p>Выберите рейс</p><select class="form-select" x-model="selectedTrip" style="width:300px;"><option value="">—</option><template x-for="t in trips" :key="t.id"><option :value="t.id" x-text="'Рейс ' + t.id + ' — ' + (t.date || '—')"></option></template></select><button class="btn btn-primary btn-sm" style="margin-top:8px;" @click="printWaybill()">Печать</button></div></div>
+        
         <div x-show="tab === 'costs'">
-            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-                <select class="form-select" x-model="costFilterMonth" style="width:150px;">
-                    <option value="">Все месяцы</option><template x-for="m in costMonths" :key="m">
-                        <option :value="m" x-text="m"></option>
-                    </template>
-                </select>
-                <select class="form-select" x-model="costFilterVehicle" style="width:200px;">
-                    <option value="">Все машины</option><template x-for="v in allVehiclesForFilter" :key="v">
-                        <option :value="v" x-text="v"></option>
-                    </template>
-                </select>
-                <select class="form-select" x-model="costFilterDriver" style="width:200px;">
-                    <option value="">Все водители</option><template x-for="d in allDriversForFilter" :key="d">
-                        <option :value="d" x-text="d"></option>
-                    </template>
-                </select>
-            </div>
             <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;overflow-x:auto;">
                 <table class="cost-table">
-                    <thead>
-                        <tr>
-                            <th>Рейс</th>
-                            <th>Дата</th>
-                            <th>Машина</th>
-                            <th>Водитель</th>
-                            <th>Зарплата</th>
-                            <th>Аморт.</th>
-                            <th>Топливо</th>
-                            <th>Дороги</th>
-                            <th>Ремонт</th>
-                            <th>Штрафы</th>
-                            <th>Прочее</th>
-                            <th>Итого</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Рейс</th><th>Дата</th><th>Машина</th><th>Водитель</th><th>Зарплата</th><th>Аморт.</th><th>Топливо</th><th>Дороги</th><th>Ремонт</th><th>Штрафы</th><th>Прочее</th><th>Итого</th></tr></thead>
                     <tbody>
-                        <template x-for="row in filteredCostRows" :key="row.trip_id">
+                        <template x-for="r in costsTable" :key="r.trip_id">
                             <tr>
-                                <td><a href="#" @click.prevent="showTripDetail(row.trip_id); tab='board'"
-                                        x-text="row.trip_id"></a></td>
-                                <td x-text="row.date"></td>
-                                <td x-text="row.vehicle"></td>
-                                <td x-text="row.driver"></td>
-                                <td x-text="row.salary ? fmtMoney(row.salary) : ''"></td>
-                                <td x-text="row.amort ? fmtMoney(row.amort) : ''"></td>
-                                <td x-text="row.fuel ? fmtMoney(row.fuel) : ''"></td>
-                                <td x-text="row.toll ? fmtMoney(row.toll) : ''"></td>
-                                <td x-text="row.repair ? fmtMoney(row.repair) : ''"></td>
-                                <td x-text="row.fine ? fmtMoney(row.fine) : ''"></td>
-                                <td x-text="row.other ? fmtMoney(row.other) : ''"></td>
-                                <td style="font-weight:600;" x-text="fmtMoney(row.total)"></td>
+                                <td><a href="#" @click.prevent="showTripDetail(r.trip_id); tab='board'" x-text="r.trip_id"></a></td>
+                                <td x-text="r.date"></td><td x-text="r.vehicle"></td><td x-text="r.driver"></td>
+                                <td x-text="r.salary ? fmtMoney(r.salary) : ''"></td>
+                                <td x-text="r.amort ? fmtMoney(r.amort) : ''"></td>
+                                <td x-text="r.fuel ? fmtMoney(r.fuel) : ''"></td>
+                                <td x-text="r.toll ? fmtMoney(r.toll) : ''"></td>
+                                <td x-text="r.repair ? fmtMoney(r.repair) : ''"></td>
+                                <td x-text="r.fine ? fmtMoney(r.fine) : ''"></td>
+                                <td x-text="r.other ? fmtMoney(r.other) : ''"></td>
+                                <td style="font-weight:600;" x-text="fmtMoney(r.total)"></td>
                             </tr>
                         </template>
-                        <tr class="total-row">
-                            <td colspan="4">ИТОГО по фильтру</td>
-                            <td x-text="fmtMoney(filteredSummary.salary)"></td>
-                            <td x-text="fmtMoney(filteredSummary.amort)"></td>
-                            <td x-text="fmtMoney(filteredSummary.fuel)"></td>
-                            <td x-text="fmtMoney(filteredSummary.toll)"></td>
-                            <td x-text="fmtMoney(filteredSummary.repair)"></td>
-                            <td x-text="fmtMoney(filteredSummary.fine)"></td>
-                            <td x-text="fmtMoney(filteredSummary.other)"></td>
-                            <td x-text="fmtMoney(filteredSummary.total)"></td>
+                        <tr class="total-row" x-show="costsTable.length">
+                            <td colspan="4">ИТОГО</td>
+                            <td x-text="fmtMoney(costsTotal.salary)"></td>
+                            <td x-text="fmtMoney(costsTotal.amort)"></td>
+                            <td x-text="fmtMoney(costsTotal.fuel)"></td>
+                            <td x-text="fmtMoney(costsTotal.toll)"></td>
+                            <td x-text="fmtMoney(costsTotal.repair)"></td>
+                            <td x-text="fmtMoney(costsTotal.fine)"></td>
+                            <td x-text="fmtMoney(costsTotal.other)"></td>
+                            <td x-text="fmtMoney(costsTotal.total)"></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-
+        
         <div x-show="tab === 'refs'">
-            <div style="display:flex;gap:8px;margin-bottom:16px;"><button class="btn btn-secondary btn-sm"
-                    @click="showModal('vehicle')">+ Машина</button><button class="btn btn-secondary btn-sm"
-                    @click="showModal('driver')">+ Водитель</button><button class="btn btn-secondary btn-sm"
-                    @click="showModal('route')">+ Маршрут</button></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
-                <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;">
-                    <div style="font-weight:600;margin-bottom:8px;">Машины</div><template x-for="v in vehicles"
-                        :key="v.plate">
-                        <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;"
-                            x-text="v.plate + ' — ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></div>
-                    </template>
-                </div>
-                <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;">
-                    <div style="font-weight:600;margin-bottom:8px;">Водители</div><template x-for="d in drivers"
-                        :key="d.name">
-                        <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;"
-                            x-text="d.name + ' — ' + (d.rate ? d.rate + '₽ — ' : '') + (d.phone ? '+7' + d.phone : '')">
-                        </div>
-                    </template>
-                </div>
-                <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;">
-                    <div style="font-weight:600;margin-bottom:8px;">Маршруты</div><template x-for="r in routes"
-                        :key="r.name">
-                        <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;"
-                            x-text="r.name + ' — ' + r.distance + ' км'"></div>
-                    </template>
-                </div>
-            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;"><button class="btn btn-secondary btn-sm" @click="showModal('vehicle')">+ Машина</button><button class="btn btn-secondary btn-sm" @click="showModal('driver')">+ Водитель</button><button class="btn btn-secondary btn-sm" @click="showModal('route')">+ Маршрут</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;"><div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;"><div style="font-weight:600;margin-bottom:8px;">Машины</div><template x-for="v in vehicles" :key="v.plate"><div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;" x-text="v.plate + ' — ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></div></template></div><div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;"><div style="font-weight:600;margin-bottom:8px;">Водители</div><template x-for="d in drivers" :key="d.name"><div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;" x-text="d.name + ' — ' + (d.rate ? d.rate + '₽ — ' : '') + (d.phone ? '+7' + d.phone : '')"></div></template></div><div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:12px;"><div style="font-weight:600;margin-bottom:8px;">Маршруты</div><template x-for="r in routes" :key="r.name"><div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3;" x-text="r.name + ' — ' + r.distance + ' км'"></div></template></div></div>
         </div>
-
-        <div class="modal-overlay" x-show="modal === 'trip'" @click.self="null">
-            <div class="modal"><button class="modal-close" @click="modal = null">✕</button>
-                <div class="modal-title">Новый рейс</div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">Дата рейса *</label><input type="date"
-                            class="form-input" :class="!formTrip.date && showErrors ? 'error' : ''"
-                            x-model="formTrip.date"></div>
-                    <div class="form-group"><label class="form-label">Тип рейса *</label><select class="form-select"
-                            x-model="formTrip.type">
-                            <option>Городской</option>
-                            <option>Междугородний</option>
-                        </select></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">Машина *</label><select class="form-select"
-                            :class="!formTrip.vehicle && showErrors ? 'error' : ''" x-model="formTrip.vehicle"
-                            @change="onVehicleChange()">
-                            <option value="">— Справочник —</option><template x-for="v in vehicles" :key="v.plate">
-                                <option :value="v.plate"
-                                    x-text="v.plate + ' ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></option>
-                            </template>
-                            <option value="__other__">Наёмная</option>
-                        </select></div>
-                    <div class="form-group" x-show="formTrip.vehicle === '__other__'"><label
-                            class="form-label">Марка/номер *</label><input type="text" class="form-input"
-                            x-model="formTrip.vehicle_name"></div>
-                </div>
-                <div class="form-group" x-show="formTrip.vehicle === '__other__'"><label class="form-label">Объём
-                        наёмной (м³) *</label><input type="number" class="form-input" x-model="formTrip.vehicle_volume"
-                        step="0.1" min="0"></div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">Водитель *</label><select class="form-select"
-                            :class="!formTrip.driver && showErrors ? 'error' : ''" x-model="formTrip.driver"
-                            @change="onDriverChange()">
-                            <option value="">— Справочник —</option><template x-for="d in drivers" :key="d.name">
-                                <option :value="d.name" x-text="d.name + ' (' + d.rate + '₽)'"></option>
-                            </template>
-                            <option value="__other__">Наёмный</option>
-                        </select></div>
-                    <div class="form-group"
-                        x-show="formTrip.driver === '__other__' || formTrip.vehicle === '__other__'"><label
-                            class="form-label">Имя водителя *</label><input type="text" class="form-input"
-                            x-model="formTrip.driver_name"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">Ставка за рейс (₽) *</label><input type="number"
-                            class="form-input" x-model="formTrip.rate" min="0"></div>
-                    <div class="form-group" x-show="formTrip.type === 'Междугородний'"><label
-                            class="form-label">Маршрут</label><select class="form-select" x-model="formTrip.route">
-                            <option value="">—</option><template x-for="r in routes" :key="r.name">
-                                <option :value="r.name" x-text="r.name + ' (' + r.distance + ' км)'"></option>
-                            </template>
-                        </select></div>
-                    <div class="form-group" x-show="formTrip.type === 'Городской'"><label
-                            class="form-label">Город</label><input type="text" class="form-input"
-                            x-model="formTrip.city"></div>
-                </div>
-                <div class="form-group"><label class="form-label">Пробег план (км)</label><input type="number"
-                        class="form-input" x-model="formTrip.plan_km" min="0"></div>
-                <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;"><label
-                        class="form-label">Адреса доставки *</label>
-                    <div class="address-header"><span class="h-seq">№</span><span class="h-id">ID заказа *</span><span
-                            class="h-addr">Адрес *</span><span class="h-contact">Контакт</span><span
-                            class="h-phone">Телефон</span><span class="h-vol">м³</span><span class="h-del"></span></div>
-                    <template x-for="(addr, i) in formTrip.addresses" :key="i">
-                        <div class="address-row"><input type="number" class="addr-seq" x-model="addr.sequence"
-                                min="1"><input type="text" class="addr-id" x-model="addr.id"><input type="text"
-                                class="addr-address" x-model="addr.address"><input type="text" class="addr-contact"
-                                x-model="addr.contact"><input type="text" class="addr-phone" x-model="addr.phone"
-                                x-mask="+7 (999) 999-99-99"><input type="number" class="addr-vol" x-model="addr.volume"
-                                min="0"><button class="btn btn-secondary btn-sm addr-del"
-                                @click="formTrip.addresses.splice(i,1)" style="color:var(--danger);">✕</button></div>
-                    </template><button class="btn btn-secondary btn-sm"
-                        @click="formTrip.addresses.push({sequence: formTrip.addresses.length + 1, id:'', address:'', contact:'', phone:'', volume:''})">+
-                        Добавить адрес</button>
-                </div>
-                <button class="btn btn-primary" style="margin-top:12px;width:100%;" @click="addTrip()"
-                    :disabled="saving"><span x-show="!saving">Добавить рейс</span><span
-                        x-show="saving">Сохранение...</span></button>
-            </div>
-        </div>
-
-        <div class="modal-overlay" x-show="modal === 'detail'" @click.self="modal = null">
-            <div class="modal"><button class="modal-close" @click="modal = null">✕</button>
-                <div class="modal-title" x-text="'Рейс ' + detailTrip?.id"></div><template x-if="detailTrip">
-                    <div>
-                        <div class="detail-row"><span class="detail-label">Дата</span><input type="date"
-                                class="detail-value" x-model="detailTrip.date_raw"
-                                @change="saveDetailField('date_raw')"></div>
-                        <div class="detail-row"><span class="detail-label">Тип</span><span class="detail-value"
-                                x-text="detailTrip.type"></span></div>
-                        <div class="detail-row"><span class="detail-label">Машина</span><span class="detail-value"
-                                x-show="!editing.vehicle" x-text="detailTrip.vehicle"></span>
-                            <div class="inline-edit" x-show="editing.vehicle"><select x-model="editForm.vehicle"
-                                    @change="onEditVehicleChange()"><template x-for="v in vehicles" :key="v.plate">
-                                        <option :value="v.plate"
-                                            x-text="v.plate + ' ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></option>
-                                    </template>
-                                    <option value="__other__">Наёмная</option>
-                                </select><input type="text" x-show="editForm.vehicle === '__other__'"
-                                    x-model="editForm.vehicle_name"></div>
-                            <div style="display:flex;gap:4px;"><button class="edit-btn" @click="editField('vehicle')"
-                                    x-show="!editing.vehicle">✎</button><button class="btn btn-primary btn-xs"
-                                    @click="saveField('vehicle')" x-show="editing.vehicle" :disabled="saving"><span
-                                        x-show="!saving">✓</span><span x-show="saving">...</span></button><button
-                                    class="btn btn-secondary btn-xs" @click="editing.vehicle = false"
-                                    x-show="editing.vehicle">✕</button></div>
-                        </div>
-                        <div class="detail-row"><span class="detail-label">Объём (м³)</span><input type="number"
-                                class="detail-value" x-model="detailTrip.vehicle_volume"
-                                @change="saveDetailField('vehicle_volume')" min="0"></div>
-                        <div class="detail-row"><span class="detail-label">Водитель</span><span class="detail-value"
-                                x-show="!editing.driver" x-text="detailTrip.driver"></span>
-                            <div class="inline-edit" x-show="editing.driver"><select x-model="editForm.driver"><template
-                                        x-for="d in drivers" :key="d.name">
-                                        <option :value="d.name" x-text="d.name"></option>
-                                    </template>
-                                    <option value="__other__">Наёмный</option>
-                                </select><input type="text" x-show="editForm.driver === '__other__'"
-                                    x-model="editForm.driver_name"></div>
-                            <div style="display:flex;gap:4px;"><button class="edit-btn" @click="editField('driver')"
-                                    x-show="!editing.driver">✎</button><button class="btn btn-primary btn-xs"
-                                    @click="saveField('driver')" x-show="editing.driver" :disabled="saving"><span
-                                        x-show="!saving">✓</span><span x-show="saving">...</span></button><button
-                                    class="btn btn-secondary btn-xs" @click="editing.driver = false"
-                                    x-show="editing.driver">✕</button></div>
-                        </div>
-                        <div class="detail-row"><span class="detail-label">Ставка (₽)</span><input type="number"
-                                class="detail-value" x-model="detailTrip.rate" @change="saveDetailField('rate')"
-                                min="0"></div>
-                        <div class="form-row">
-                            <div class="detail-row" style="flex:1;"><span class="detail-label">Пробег план</span><input
-                                    type="number" class="detail-value" x-model="detailTrip.plan_km"
-                                    @change="saveDetailField('plan_km')" min="0"></div>
-                            <div class="detail-row" style="flex:1;"><span class="detail-label">Пробег факт</span><input
-                                    type="number" class="detail-value" x-model="detailTrip.fact_km"
-                                    @change="saveDetailField('fact_km')" min="0"></div>
-                        </div>
-                        <div class="detail-row"><span class="detail-label">Загрузка</span><span class="detail-value"
-                                x-text="loadPercent(detailTrip) + '% (' + (detailTrip.load_volume || '0') + 'м³ / ' + (detailTrip.vehicle_volume || '?') + 'м³)'"></span>
-                        </div>
-                        <div class="detail-row"><span class="detail-label">Статус</span><select class="detail-value"
-                                x-model="detailTrip.status" @change="updateTripStatus(detailTrip.id, detailTrip.status)"
-                                style="width:200px;">
-                                <option>Формируется</option>
-                                <option>Загрузка</option>
-                                <option>В пути</option>
-                                <option>Завершён</option>
-                            </select></div>
-                        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
-                            <div class="form-label" style="margin-bottom:8px;">Затраты по рейсу</div><template
-                                x-if="detailCosts.length">
-                                <div style="margin-bottom:8px;"><template x-for="c in detailCosts"
-                                        :key="c.category + c.amount">
-                                        <div class="cost-row" :class="c.auto ? 'cost-auto' : ''"><span
-                                                x-text="c.category"></span><span
-                                                x-text="fmtMoney(c.amount)"></span><span
-                                                style="font-size:10px;color:var(--text2);" x-text="c.note || ''"></span>
-                                        </div>
-                                    </template></div>
-                            </template>
-                            <div x-show="!detailCosts.length"
-                                style="font-size:11px;color:var(--text2);margin-bottom:8px;">Нет затрат</div>
-                            <div class="detail-row" style="font-size:11px;"><span
-                                    class="detail-label">Статья</span><select class="detail-value"
-                                    x-model="newCost.category" style="width:150px;">
-                                    <option>Топливо</option>
-                                    <option>Ремонт</option>
-                                    <option>Платные дороги</option>
-                                    <option>Штрафы</option>
-                                    <option>Прочее</option>
-                                </select><input type="number" class="detail-value" x-model="newCost.amount"
-                                    placeholder="Сумма" style="width:100px;" min="0"><input type="text"
-                                    class="detail-value" x-model="newCost.note" placeholder="Примечание"
-                                    style="width:150px;"><button class="btn btn-primary btn-xs"
-                                    @click="addCostToTrip()">+</button></div>
-                        </div>
-                        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
-                            <div class="form-label" style="margin-bottom:8px;">Адреса доставки</div>
-                            <div class="address-header"><span class="h-seq">№</span><span class="h-id">ID
-                                    заказа</span><span class="h-addr">Адрес</span><span
-                                    class="h-contact">Контакт</span><span class="h-phone">Телефон</span><span
-                                    class="h-vol">м³</span><span class="h-edit"></span><span class="h-del"></span></div>
-                            <template
-                                x-for="(o, i) in ordersByTrip(detailTrip.id).sort((a,b) => (a.sequence||99) - (b.sequence||99))"
-                                :key="o.id">
-                                <div class="address-row" x-data="{ editOrder: false, editForm: {} }"><template
-                                        x-if="!editOrder">
-                                        <div class="address-row" style="width:100%;"><input type="number"
-                                                class="addr-seq" x-model="o.sequence"
-                                                @change="updateOrderSequence(o.id, o.sequence)" min="1"><span
-                                                class="addr-id" x-text="o.id"></span><span class="addr-address"
-                                                x-text="o.address"></span><span class="addr-contact"
-                                                x-text="o.contact || '—'"></span><span class="addr-phone"
-                                                x-text="o.phone ? '+7' + o.phone : '—'"></span><span class="addr-vol"
-                                                x-text="(o.volume || '—') + 'м³'"></span><button
-                                                class="btn btn-secondary btn-xs addr-edit"
-                                                @click="editOrder = true; editForm = { id: o.id, address: o.address, contact: o.contact || '', phone: o.phone ? '+7' + o.phone : '', volume: o.volume || '' }">✎</button><button
-                                                class="btn btn-secondary btn-xs addr-del" @click="deleteOrder(o.id)"
-                                                style="color:var(--danger);">✕</button></div>
-                                    </template><template x-if="editOrder">
-                                        <div class="address-row" style="width:100%;"><span class="addr-seq"
-                                                x-text="o.sequence"></span><span class="addr-id"
-                                                x-text="editForm.id"></span><input type="text" class="addr-address"
-                                                x-model="editForm.address"><input type="text" class="addr-contact"
-                                                x-model="editForm.contact"><input type="text" class="addr-phone"
-                                                x-model="editForm.phone" x-mask="+7 (999) 999-99-99"><input
-                                                type="number" class="addr-vol" x-model="editForm.volume" min="0"><button
-                                                class="btn btn-primary btn-xs"
-                                                @click="saveOrderEdit(editForm); editOrder = false">✓</button><button
-                                                class="btn btn-secondary btn-xs" @click="editOrder = false">✕</button>
-                                        </div>
-                                    </template></div>
-                            </template><button class="btn btn-secondary btn-sm" style="margin-top:8px;"
-                                @click="addOrderToTrip(detailTrip.id)">+ Добавить адрес</button>
-                        </div>
-                        <div style="margin-top:16px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm"
-                                @click="saveDetailChange(); modal = null">Закрыть и сохранить</button><button
-                                class="btn btn-secondary btn-sm"
-                                @click="deleteTrip(detailTrip.id); modal = null">Удалить рейс</button></div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <div class="modal-overlay" x-show="modal === 'vehicle'" @click.self="null">
-            <div class="modal"><button class="modal-close" @click="modal = null">✕</button>
-                <div class="modal-title">Новая машина</div>
-                <div class="form-group"><label class="form-label">Госномер</label><input type="text" class="form-input"
-                        x-model="formVehicle.plate"></div>
-                <div class="form-group"><label class="form-label">Марка/модель</label><input type="text"
-                        class="form-input" x-model="formVehicle.model"></div>
-                <div class="form-group"><label class="form-label">Объём кузова (м³)</label><input type="number"
-                        class="form-input" x-model="formVehicle.volume" step="0.1" min="0"></div>
-                <div class="form-group"><label class="form-label">Норма расхода (л/100км)</label><input type="number"
-                        class="form-input" x-model="formVehicle.fuel_rate" step="0.1" min="0"></div>
-                <div class="form-group"><label class="form-label">Ставка аморт. (₽/км)</label><input type="number"
-                        class="form-input" x-model="formVehicle.amort_rate" step="0.01" min="0"></div><button
-                    class="btn btn-primary" @click="addVehicle()" :disabled="saving"><span
-                        x-show="!saving">Добавить</span><span x-show="saving">Сохранение...</span></button>
-            </div>
-        </div>
-        <div class="modal-overlay" x-show="modal === 'driver'" @click.self="null">
-            <div class="modal"><button class="modal-close" @click="modal = null">✕</button>
-                <div class="modal-title">Новый водитель</div>
-                <div class="form-group"><label class="form-label">ФИО</label><input type="text" class="form-input"
-                        x-model="formDriver.name"></div>
-                <div class="form-group"><label class="form-label">Телефон</label><input type="text" class="form-input"
-                        x-model="formDriver.phone" x-mask="+7 (999) 999-99-99"></div>
-                <div class="form-group"><label class="form-label">Ставка за рейс (₽)</label><input type="number"
-                        class="form-input" x-model="formDriver.rate" min="0"></div><button class="btn btn-primary"
-                    @click="addDriver()" :disabled="saving"><span x-show="!saving">Добавить</span><span
-                        x-show="saving">Сохранение...</span></button>
-            </div>
-        </div>
-        <div class="modal-overlay" x-show="modal === 'route'" @click.self="null">
-            <div class="modal"><button class="modal-close" @click="modal = null">✕</button>
-                <div class="modal-title">Новый маршрут</div>
-                <div class="form-group"><label class="form-label">Название</label><input type="text" class="form-input"
-                        x-model="formRoute.name"></div>
-                <div class="form-group"><label class="form-label">Откуда</label><input type="text" class="form-input"
-                        x-model="formRoute.from"></div>
-                <div class="form-group"><label class="form-label">Куда</label><input type="text" class="form-input"
-                        x-model="formRoute.to"></div>
-                <div class="form-group"><label class="form-label">Расстояние (км)</label><input type="number"
-                        class="form-input" x-model="formRoute.distance" min="0"></div><button class="btn btn-primary"
-                    @click="addRoute()" :disabled="saving"><span x-show="!saving">Добавить</span><span
-                        x-show="saving">Сохранение...</span></button>
-            </div>
-        </div>
-
+        
+        <div class="modal-overlay" x-show="modal === 'trip'" @click.self="null"><div class="modal"><button class="modal-close" @click="modal = null">✕</button><div class="modal-title">Новый рейс</div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Дата рейса *</label><input type="date" class="form-input" :class="!formTrip.date && showErrors ? 'error' : ''" x-model="formTrip.date"></div><div class="form-group"><label class="form-label">Тип рейса *</label><select class="form-select" x-model="formTrip.type"><option>Городской</option><option>Междугородний</option></select></div></div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Машина *</label><select class="form-select" :class="!formTrip.vehicle && showErrors ? 'error' : ''" x-model="formTrip.vehicle" @change="onVehicleChange()"><option value="">— Справочник —</option><template x-for="v in vehicles" :key="v.plate"><option :value="v.plate" x-text="v.plate + ' ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></option></template><option value="__other__">Наёмная</option></select></div><div class="form-group" x-show="formTrip.vehicle === '__other__'"><label class="form-label">Марка/номер *</label><input type="text" class="form-input" x-model="formTrip.vehicle_name"></div></div>
+            <div class="form-group" x-show="formTrip.vehicle === '__other__'"><label class="form-label">Объём наёмной (м³) *</label><input type="number" class="form-input" x-model="formTrip.vehicle_volume" step="0.1" min="0"></div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Водитель *</label><select class="form-select" :class="!formTrip.driver && showErrors ? 'error' : ''" x-model="formTrip.driver" @change="onDriverChange()"><option value="">— Справочник —</option><template x-for="d in drivers" :key="d.name"><option :value="d.name" x-text="d.name + ' (' + d.rate + '₽)'"></option></template><option value="__other__">Наёмный</option></select></div><div class="form-group" x-show="formTrip.driver === '__other__' || formTrip.vehicle === '__other__'"><label class="form-label">Имя водителя *</label><input type="text" class="form-input" x-model="formTrip.driver_name"></div></div>
+            <div class="form-row"><div class="form-group"><label class="form-label">Ставка за рейс (₽) *</label><input type="number" class="form-input" x-model="formTrip.rate" min="0"></div><div class="form-group" x-show="formTrip.type === 'Междугородний'"><label class="form-label">Маршрут</label><select class="form-select" x-model="formTrip.route"><option value="">—</option><template x-for="r in routes" :key="r.name"><option :value="r.name" x-text="r.name + ' (' + r.distance + ' км)'"></option></template></select></div><div class="form-group" x-show="formTrip.type === 'Городской'"><label class="form-label">Город</label><input type="text" class="form-input" x-model="formTrip.city"></div></div>
+            <div class="form-group"><label class="form-label">Пробег план (км)</label><input type="number" class="form-input" x-model="formTrip.plan_km" min="0"></div>
+            <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;"><label class="form-label">Адреса доставки *</label><div class="address-header"><span class="h-seq">№</span><span class="h-id">ID заказа *</span><span class="h-addr">Адрес *</span><span class="h-contact">Контакт</span><span class="h-phone">Телефон</span><span class="h-vol">м³</span><span class="h-del"></span></div><template x-for="(addr, i) in formTrip.addresses" :key="i"><div class="address-row"><input type="number" class="addr-seq" x-model="addr.sequence" min="1"><input type="text" class="addr-id" x-model="addr.id"><input type="text" class="addr-address" x-model="addr.address"><input type="text" class="addr-contact" x-model="addr.contact"><input type="text" class="addr-phone" x-model="addr.phone" x-mask="+7 (999) 999-99-99"><input type="number" class="addr-vol" x-model="addr.volume" min="0"><button class="btn btn-secondary btn-sm addr-del" @click="formTrip.addresses.splice(i,1)" style="color:var(--danger);">✕</button></div></template><button class="btn btn-secondary btn-sm" @click="formTrip.addresses.push({sequence: formTrip.addresses.length + 1, id:'', address:'', contact:'', phone:'', volume:''})">+ Добавить адрес</button></div>
+            <button class="btn btn-primary" style="margin-top:12px;width:100%;" @click="addTrip()" :disabled="saving"><span x-show="!saving">Добавить рейс</span><span x-show="saving">Сохранение...</span></button>
+        </div></div>
+        
+        <div class="modal-overlay" x-show="modal === 'detail'" @click.self="modal = null"><div class="modal"><button class="modal-close" @click="modal = null">✕</button><div class="modal-title" x-text="'Рейс ' + detailTrip?.id"></div><template x-if="detailTrip"><div>
+            <div class="detail-row"><span class="detail-label">Дата</span><input type="date" class="detail-value" x-model="detailTrip.date_raw" @change="saveDetailField('date_raw')"></div>
+            <div class="detail-row"><span class="detail-label">Тип</span><span class="detail-value" x-text="detailTrip.type"></span></div>
+            <div class="detail-row"><span class="detail-label">Машина</span><span class="detail-value" x-show="!editing.vehicle" x-text="detailTrip.vehicle"></span><div class="inline-edit" x-show="editing.vehicle"><select x-model="editForm.vehicle" @change="onEditVehicleChange()"><template x-for="v in vehicles" :key="v.plate"><option :value="v.plate" x-text="v.plate + ' ' + v.model + ' (' + (v.volume||'?') + 'м³)'"></option></template><option value="__other__">Наёмная</option></select><input type="text" x-show="editForm.vehicle === '__other__'" x-model="editForm.vehicle_name"></div><div style="display:flex;gap:4px;"><button class="edit-btn" @click="editField('vehicle')" x-show="!editing.vehicle">✎</button><button class="btn btn-primary btn-xs" @click="saveField('vehicle')" x-show="editing.vehicle" :disabled="saving"><span x-show="!saving">✓</span><span x-show="saving">...</span></button><button class="btn btn-secondary btn-xs" @click="editing.vehicle = false" x-show="editing.vehicle">✕</button></div></div>
+            <div class="detail-row"><span class="detail-label">Объём (м³)</span><input type="number" class="detail-value" x-model="detailTrip.vehicle_volume" @change="saveDetailField('vehicle_volume')" min="0"></div>
+            <div class="detail-row"><span class="detail-label">Водитель</span><span class="detail-value" x-show="!editing.driver" x-text="detailTrip.driver"></span><div class="inline-edit" x-show="editing.driver"><select x-model="editForm.driver"><template x-for="d in drivers" :key="d.name"><option :value="d.name" x-text="d.name"></option></template><option value="__other__">Наёмный</option></select><input type="text" x-show="editForm.driver === '__other__'" x-model="editForm.driver_name"></div><div style="display:flex;gap:4px;"><button class="edit-btn" @click="editField('driver')" x-show="!editing.driver">✎</button><button class="btn btn-primary btn-xs" @click="saveField('driver')" x-show="editing.driver" :disabled="saving"><span x-show="!saving">✓</span><span x-show="saving">...</span></button><button class="btn btn-secondary btn-xs" @click="editing.driver = false" x-show="editing.driver">✕</button></div></div>
+            <div class="detail-row"><span class="detail-label">Ставка (₽)</span><input type="number" class="detail-value" x-model="detailTrip.rate" @change="saveDetailField('rate')" min="0"></div>
+            <div class="form-row"><div class="detail-row" style="flex:1;"><span class="detail-label">Пробег план</span><input type="number" class="detail-value" x-model="detailTrip.plan_km" @change="saveDetailField('plan_km')" min="0"></div><div class="detail-row" style="flex:1;"><span class="detail-label">Пробег факт</span><input type="number" class="detail-value" x-model="detailTrip.fact_km" @change="saveDetailField('fact_km')" min="0"></div></div>
+            <div class="detail-row"><span class="detail-label">Загрузка</span><span class="detail-value" x-text="loadPercent(detailTrip) + '% (' + (detailTrip.load_volume || '0') + 'м³ / ' + (detailTrip.vehicle_volume || '?') + 'м³)'"></span></div>
+            <div class="detail-row"><span class="detail-label">Статус</span><select class="detail-value" x-model="detailTrip.status" @change="updateTripStatus(detailTrip.id, detailTrip.status)" style="width:200px;"><option>Формируется</option><option>Загрузка</option><option>В пути</option><option>Завершён</option></select></div>
+            <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;"><div class="form-label" style="margin-bottom:8px;">Затраты по рейсу</div><template x-if="detailCosts.length"><div style="margin-bottom:8px;"><template x-for="c in detailCosts" :key="c.category + c.amount"><div class="cost-row" :class="c.auto ? 'cost-auto' : ''"><span x-text="c.category"></span><span x-text="fmtMoney(c.amount)"></span><span style="font-size:10px;color:var(--text2);" x-text="c.note || ''"></span></div></template></div></template><div x-show="!detailCosts.length" style="font-size:11px;color:var(--text2);margin-bottom:8px;">Нет затрат</div><div class="detail-row" style="font-size:11px;"><span class="detail-label">Статья</span><select class="detail-value" x-model="newCost.category" style="width:150px;"><option>Топливо</option><option>Ремонт</option><option>Платные дороги</option><option>Штрафы</option><option>Прочее</option></select><input type="number" class="detail-value" x-model="newCost.amount" placeholder="Сумма" style="width:100px;" min="0"><input type="text" class="detail-value" x-model="newCost.note" placeholder="Примечание" style="width:150px;"><button class="btn btn-primary btn-xs" @click="addCostToTrip()">+</button></div></div>
+            <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;"><div class="form-label" style="margin-bottom:8px;">Адреса доставки</div><div class="address-header"><span class="h-seq">№</span><span class="h-id">ID заказа</span><span class="h-addr">Адрес</span><span class="h-contact">Контакт</span><span class="h-phone">Телефон</span><span class="h-vol">м³</span><span class="h-edit"></span><span class="h-del"></span></div><template x-for="(o, i) in ordersByTrip(detailTrip.id).sort((a,b) => (a.sequence||99) - (b.sequence||99))" :key="o.id"><div class="address-row" x-data="{ editOrder: false, editForm: {} }"><template x-if="!editOrder"><div class="address-row" style="width:100%;"><input type="number" class="addr-seq" x-model="o.sequence" @change="updateOrderSequence(o.id, o.sequence)" min="1"><span class="addr-id" x-text="o.id"></span><span class="addr-address" x-text="o.address"></span><span class="addr-contact" x-text="o.contact || '—'"></span><span class="addr-phone" x-text="o.phone ? '+7' + o.phone : '—'"></span><span class="addr-vol" x-text="(o.volume || '—') + 'м³'"></span><button class="btn btn-secondary btn-xs addr-edit" @click="editOrder = true; editForm = { id: o.id, address: o.address, contact: o.contact || '', phone: o.phone ? '+7' + o.phone : '', volume: o.volume || '' }">✎</button><button class="btn btn-secondary btn-xs addr-del" @click="deleteOrder(o.id)" style="color:var(--danger);">✕</button></div></template><template x-if="editOrder"><div class="address-row" style="width:100%;"><span class="addr-seq" x-text="o.sequence"></span><span class="addr-id" x-text="editForm.id"></span><input type="text" class="addr-address" x-model="editForm.address"><input type="text" class="addr-contact" x-model="editForm.contact"><input type="text" class="addr-phone" x-model="editForm.phone" x-mask="+7 (999) 999-99-99"><input type="number" class="addr-vol" x-model="editForm.volume" min="0"><button class="btn btn-primary btn-xs" @click="saveOrderEdit(editForm); editOrder = false">✓</button><button class="btn btn-secondary btn-xs" @click="editOrder = false">✕</button></div></template></div></template><button class="btn btn-secondary btn-sm" style="margin-top:8px;" @click="addOrderToTrip(detailTrip.id)">+ Добавить адрес</button></div>
+            <div style="margin-top:16px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm" @click="saveDetailChange(); modal = null">Закрыть и сохранить</button><button class="btn btn-secondary btn-sm" @click="deleteTrip(detailTrip.id); modal = null">Удалить рейс</button></div>
+        </div></template></div></div>
+        
+        <div class="modal-overlay" x-show="modal === 'vehicle'" @click.self="null"><div class="modal"><button class="modal-close" @click="modal = null">✕</button><div class="modal-title">Новая машина</div><div class="form-group"><label class="form-label">Госномер</label><input type="text" class="form-input" x-model="formVehicle.plate"></div><div class="form-group"><label class="form-label">Марка/модель</label><input type="text" class="form-input" x-model="formVehicle.model"></div><div class="form-group"><label class="form-label">Объём кузова (м³)</label><input type="number" class="form-input" x-model="formVehicle.volume" step="0.1" min="0"></div><div class="form-group"><label class="form-label">Норма расхода (л/100км)</label><input type="number" class="form-input" x-model="formVehicle.fuel_rate" step="0.1" min="0"></div><div class="form-group"><label class="form-label">Ставка аморт. (₽/км)</label><input type="number" class="form-input" x-model="formVehicle.amort_rate" step="0.01" min="0"></div><button class="btn btn-primary" @click="addVehicle()" :disabled="saving"><span x-show="!saving">Добавить</span><span x-show="saving">Сохранение...</span></button></div></div>
+        <div class="modal-overlay" x-show="modal === 'driver'" @click.self="null"><div class="modal"><button class="modal-close" @click="modal = null">✕</button><div class="modal-title">Новый водитель</div><div class="form-group"><label class="form-label">ФИО</label><input type="text" class="form-input" x-model="formDriver.name"></div><div class="form-group"><label class="form-label">Телефон</label><input type="text" class="form-input" x-model="formDriver.phone" x-mask="+7 (999) 999-99-99"></div><div class="form-group"><label class="form-label">Ставка за рейс (₽)</label><input type="number" class="form-input" x-model="formDriver.rate" min="0"></div><button class="btn btn-primary" @click="addDriver()" :disabled="saving"><span x-show="!saving">Добавить</span><span x-show="saving">Сохранение...</span></button></div></div>
+        <div class="modal-overlay" x-show="modal === 'route'" @click.self="null"><div class="modal"><button class="modal-close" @click="modal = null">✕</button><div class="modal-title">Новый маршрут</div><div class="form-group"><label class="form-label">Название</label><input type="text" class="form-input" x-model="formRoute.name"></div><div class="form-group"><label class="form-label">Откуда</label><input type="text" class="form-input" x-model="formRoute.from"></div><div class="form-group"><label class="form-label">Куда</label><input type="text" class="form-input" x-model="formRoute.to"></div><div class="form-group"><label class="form-label">Расстояние (км)</label><input type="number" class="form-input" x-model="formRoute.distance" min="0"></div><button class="btn btn-primary" @click="addRoute()" :disabled="saving"><span x-show="!saving">Добавить</span><span x-show="saving">Сохранение...</span></button></div></div>
+        
         <div class="toast no-print" x-show="toast" x-text="toast" @click="toast = ''"></div>
     </main>
-
-    <div class="waybill" id="waybillPrint">
-        <h1>ПУТЕВОЙ ЛИСТ № <span x-text="waybillData?.id || '—'"></span></h1>
-        <div class="subtitle" x-text="'Дата рейса: ' + (waybillData?.date || '—')"></div>
-        <div class="info-row"><span class="info-label">Машина:</span> <span
-                x-text="(waybillData?.vehicle || '—') + ' (' + (waybillData?.vehicle_volume || '?') + ' м³)'"></span>
-        </div>
-        <div class="info-row"><span class="info-label">Водитель:</span> <span
-                x-text="(waybillData?.driver || '—') + (waybillData?.driver_phone ? ' — +7' + waybillData?.driver_phone : '')"></span>
-        </div>
-        <div class="info-row"><span class="info-label">Пробег план:</span> <span
-                x-text="(waybillData?.plan_km || '—') + ' км'"></span></div>
-        <table>
-            <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Адрес</th>
-                    <th>Контакт</th>
-                    <th>Телефон</th>
-                    <th>м³</th>
-                    <th>Статус</th>
-                    <th>Подпись</th>
-                </tr>
-            </thead>
-            <tbody><template x-for="(o, i) in waybillOrders" :key="o.id">
-                    <tr>
-                        <td x-text="i + 1"></td>
-                        <td x-text="o.address"></td>
-                        <td x-text="o.contact || '—'"></td>
-                        <td x-text="o.phone ? '+7' + o.phone : '—'"></td>
-                        <td x-text="o.volume || '—'"></td>
-                        <td style="width:120px;">[ ] Доставлено</td>
-                        <td style="width:150px;"></td>
-                    </tr>
-                </template>
-                <tr style="font-weight:600;">
-                    <td colspan="4">ИТОГО: <span x-text="waybillOrders.length"></span> адресов, <span
-                            x-text="waybillTotalVol"></span> м³</td>
-                    <td colspan="3"></td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="signatures">
-            <div>
-                <div class="line"></div>Водитель (подпись)
-            </div>
-            <div>
-                <div class="line"></div>Диспетчер (подпись)
-            </div>
-            <div>Дата: ____ ________ 2026 г.</div>
-        </div>
-    </div>
-
+    
+    <div class="waybill" id="waybillPrint"><h1>ПУТЕВОЙ ЛИСТ № <span x-text="waybillData?.id || '—'"></span></h1><div class="subtitle" x-text="'Дата рейса: ' + (waybillData?.date || '—')"></div><div class="info-row"><span class="info-label">Машина:</span> <span x-text="(waybillData?.vehicle || '—') + ' (' + (waybillData?.vehicle_volume || '?') + ' м³)'"></span></div><div class="info-row"><span class="info-label">Водитель:</span> <span x-text="(waybillData?.driver || '—') + (waybillData?.driver_phone ? ' — +7' + waybillData?.driver_phone : '')"></span></div><div class="info-row"><span class="info-label">Пробег план:</span> <span x-text="(waybillData?.plan_km || '—') + ' км'"></span></div><table><thead><tr><th>№</th><th>Адрес</th><th>Контакт</th><th>Телефон</th><th>м³</th><th>Статус</th><th>Подпись</th></tr></thead><tbody><template x-for="(o, i) in waybillOrders" :key="o.id"><tr><td x-text="i + 1"></td><td x-text="o.address"></td><td x-text="o.contact || '—'"></td><td x-text="o.phone ? '+7' + o.phone : '—'"></td><td x-text="o.volume || '—'"></td><td style="width:120px;">[  ] Доставлено</td><td style="width:150px;"></td></tr></template><tr style="font-weight:600;"><td colspan="4">ИТОГО: <span x-text="waybillOrders.length"></span> адресов, <span x-text="waybillTotalVol"></span> м³</td><td colspan="3"></td></tr></tbody></table><div class="signatures"><div><div class="line"></div>Водитель (подпись)</div><div><div class="line"></div>Диспетчер (подпись)</div><div>Дата: ____ ________ 2026 г.</div></div></div>
+    
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz62R4Rv7y_ai7hzmYiy4qPPdSfzV3arSh3i2hW0YeWXbqjimJeBf27bhBTPp8zj9nveg/exec';
-        function fmtMoney(val) { if (!val) return ''; const num = Number(val); if (Math.abs(num) >= 1e6) return (num / 1e6).toFixed(1) + ' млн ₽'; if (Math.abs(num) >= 1e3) return (num / 1e3).toFixed(0) + ' тыс ₽'; return num.toLocaleString('ru-RU') + ' ₽'; }
-
+        function fmtMoney(val) { if (!val) return ''; const num = Number(val); if (Math.abs(num) >= 1e6) return (num/1e6).toFixed(1) + ' млн ₽'; if (Math.abs(num) >= 1e3) return (num/1e3).toFixed(0) + ' тыс ₽'; return num.toLocaleString('ru-RU') + ' ₽'; }
+        
         function app() {
             return {
                 tab: 'board', modal: null, saving: false, loading: false, toast: '', showErrors: false,
-                trips: [], orders: [], drivers: [], vehicles: [], routes: [], costs: [], allCosts: [],
+                trips: [], orders: [], drivers: [], vehicles: [], routes: [], costs: [],
                 selectedTrip: '', detailTrip: null, waybillData: null, waybillOrders: [], waybillTotalVol: 0,
                 today: new Date().toLocaleDateString('ru-RU'),
                 editing: { vehicle: false, driver: false },
                 editForm: { vehicle: '', vehicle_name: '', driver: '', driver_name: '' },
                 newCost: { category: 'Топливо', amount: '', note: '' },
-                costFilterMonth: '', costFilterVehicle: '', costFilterDriver: '',
-                formTrip: { date: '', type: 'Городской', vehicle: '', vehicle_name: '', vehicle_volume: '', driver: '', driver_name: '', rate: '', route: '', city: 'Москва', plan_km: 100, addresses: [{ sequence: 1, id: '', address: '', contact: '', phone: '', volume: '' }] },
+                formTrip: { date: '', type: 'Городской', vehicle: '', vehicle_name: '', vehicle_volume: '', driver: '', driver_name: '', rate: '', route: '', city: 'Москва', plan_km: 100, addresses: [{sequence: 1, id:'', address:'', contact:'', phone:'', volume:''}] },
                 formVehicle: { plate: '', model: '', volume: '', fuel_rate: '', amort_rate: '' },
                 formDriver: { name: '', phone: '', rate: '' },
                 formRoute: { name: '', from: '', to: '', distance: '' },
                 draggedTripId: null, dragOverStatus: null,
-                columns: [{ status: 'Формируется', title: '📋 Формируется', titleClass: 'col-forming' }, { status: 'Загрузка', title: '🔵 Загрузка', titleClass: 'col-loading' }, { status: 'В пути', title: '🟢 В пути', titleClass: 'col-transit' }, { status: 'Завершён', title: '✅ Завершён', titleClass: 'col-done' }],
-
-                get allVehiclesForFilter() { const set = new Set(); this.trips.forEach(t => { if (t.vehicle) set.add(t.vehicle); }); return [...set].sort(); },
-                get allDriversForFilter() { const set = new Set(); this.trips.forEach(t => { if (t.driver) set.add(t.driver); }); return [...set].sort(); },
-                get costMonths() { const months = new Set(); this.trips.forEach(t => { if (t.date_raw) { const d = new Date(t.date_raw); months.add(d.toLocaleString('ru-RU', { month: 'long', year: 'numeric' })); } }); return [...months].sort().reverse(); },
-                get allCosts() {
-                    return this.buildAllCosts();
-                },
-               get filteredCostRows() {
-                    const allCostsData = this.allCosts;
-                    return this.trips.map(t => {
-                        const tripCosts = allCostsData.filter(c => String(c.trip_id) === String(t.id));
-                        const getSum = (cat) => tripCosts.filter(c => c.category === cat).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-                        const salary = getSum('Зарплата'), amort = getSum('Амортизация'), fuel = getSum('Топливо'), toll = getSum('Платные дороги'), repair = getSum('Ремонт'), fine = getSum('Штрафы'), other = getSum('Прочее');
+                columns: [{ status: 'Формируется', title: '📋 Формируется', titleClass: 'col-forming' },{ status: 'Загрузка', title: '🔵 Загрузка', titleClass: 'col-loading' },{ status: 'В пути', title: '🟢 В пути', titleClass: 'col-transit' },{ status: 'Завершён', title: '✅ Завершён', titleClass: 'col-done' }],
+                
+                get costsTable() {
+                    const result = [];
+                    this.trips.forEach(t => {
+                        const tc = this.costs.filter(c => String(c.trip_id).trim() === String(t.id).trim());
+                        const get = (cat) => tc.filter(c => c.category === cat).reduce((s, c) => s + (Number(c.amount) || 0), 0);
+                        let salary = get('Зарплата'), amort = get('Амортизация');
+                        if (salary === 0 && Number(t.rate) > 0) salary = Number(t.rate);
+                        const v = this.vehicles.find(x => x.plate === t.vehicle);
+                        if (amort === 0 && v && t.vehicle !== '__other__' && Number(t.fact_km) > 0 && Number(v.amort_rate) > 0) amort = Math.round(Number(t.fact_km) * Number(v.amort_rate));
+                        const fuel = get('Топливо'), toll = get('Платные дороги'), repair = get('Ремонт'), fine = get('Штрафы'), other = get('Прочее');
                         const total = salary + amort + fuel + toll + repair + fine + other;
-                        const d = t.date_raw || t.date; const m = d ? new Date(d).toLocaleString('ru-RU', { month: 'long', year: 'numeric' }) : '';
-                        if (this.costFilterMonth && m !== this.costFilterMonth) return null;
-                        if (this.costFilterVehicle && t.vehicle !== this.costFilterVehicle) return null;
-                        if (this.costFilterDriver && t.driver !== this.costFilterDriver) return null;
-                        return { trip_id: t.id, date: t.date || '—', vehicle: t.vehicle, driver: t.driver, salary, amort, fuel, toll, repair, fine, other, total };
-                    }).filter(Boolean);
+                        if (total === 0) return;
+                        result.push({ trip_id: t.id, date: t.date || '—', vehicle: t.vehicle, driver: t.driver, salary, amort, fuel, toll, repair, fine, other, total });
+                    });
+                    return result;
                 },
-                get filteredSummary() {
-                    const rows = this.filteredCostRows;
-                    const sum = (key) => rows.reduce((a, b) => a + (Number(b[key]) || 0), 0);
-                    const salary = sum('salary'), amort = sum('amort'), fuel = sum('fuel'), toll = sum('toll'), repair = sum('repair'), fine = sum('fine'), other = sum('other');
-                    return { salary, amort, fuel, toll, repair, fine, other, total: salary + amort + fuel + toll + repair + fine + other };
+                get costsTotal() {
+                    const sum = (key) => this.costsTable.reduce((s, r) => s + (Number(r[key]) || 0), 0);
+                    return { salary: sum('salary'), amort: sum('amort'), fuel: sum('fuel'), toll: sum('toll'), repair: sum('repair'), fine: sum('fine'), other: sum('other'), total: sum('total') };
                 },
-                get detailCosts() { if (!this.detailTrip) return []; const tc = this.costs.filter(c => c.trip_id === this.detailTrip.id); const result = []; const hasSalary = tc.some(c => c.category === 'Зарплата'); const hasAmort = tc.some(c => c.category === 'Амортизация'); if (!hasSalary && Number(this.detailTrip.rate) > 0) result.push({ category: 'Зарплата', amount: Number(this.detailTrip.rate), note: 'авто', auto: true }); const v = this.vehicles.find(x => x.plate === this.detailTrip.vehicle); const isOwn = v && this.detailTrip.vehicle !== '__other__'; if (!hasAmort && isOwn && Number(this.detailTrip.fact_km) > 0 && Number(v?.amort_rate) > 0) result.push({ category: 'Амортизация', amount: Math.round(Number(this.detailTrip.fact_km) * Number(v.amort_rate)), note: 'авто (' + this.detailTrip.fact_km + ' км × ' + v.amort_rate + ' ₽/км)', auto: true }); return [...result, ...tc.map(c => ({ category: c.category, amount: Number(c.amount), note: c.note, auto: false }))]; },
-
+                get detailCosts() {
+                    if (!this.detailTrip) return [];
+                    const tc = this.costs.filter(c => String(c.trip_id).trim() === String(this.detailTrip.id).trim());
+                    const get = (cat) => tc.filter(c => c.category === cat).reduce((s, c) => s + (Number(c.amount) || 0), 0);
+                    const result = [];
+                    let salary = get('Зарплата'), amort = get('Амортизация');
+                    if (salary === 0 && Number(this.detailTrip.rate) > 0) { salary = Number(this.detailTrip.rate); result.push({ category: 'Зарплата', amount: salary, note: 'авто', auto: true }); }
+                    const v = this.vehicles.find(x => x.plate === this.detailTrip.vehicle);
+                    if (amort === 0 && v && this.detailTrip.vehicle !== '__other__' && Number(this.detailTrip.fact_km) > 0 && Number(v.amort_rate) > 0) { amort = Math.round(Number(this.detailTrip.fact_km) * Number(v.amort_rate)); result.push({ category: 'Амортизация', amount: amort, note: 'авто', auto: true }); }
+                    return [...result, ...tc.map(c => ({ category: c.category, amount: Number(c.amount), note: c.note, auto: false }))];
+                },
+                
                 dragStart(id) { this.draggedTripId = id; }, dragEnd() { this.draggedTripId = null; this.dragOverStatus = null; },
                 async dropTrip(newStatus) { const tripId = this.draggedTripId; this.dragOverStatus = null; this.draggedTripId = null; if (!tripId) return; const trip = this.trips.find(t => t.id === tripId); if (!trip || trip.status === newStatus) return; if (newStatus === 'Завершён') { const ok = await this.checkComplete(trip); if (!ok) { this.toast = 'Заполните пробег факт и затраты!'; setTimeout(() => this.toast = '', 2000); return; } } trip.status = newStatus; if (this.detailTrip?.id === tripId) this.detailTrip.status = newStatus; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_trip_status', id: tripId, status: newStatus }) }); this.toast = 'Рейс ' + tripId + ' → ' + newStatus; setTimeout(() => this.toast = '', 2000); },
-                async checkComplete(trip) { if (!trip.fact_km || Number(trip.fact_km) <= 0) return false; const v = this.vehicles.find(x => x.plate === trip.vehicle); const isOwn = v && trip.vehicle !== '__other__'; if (isOwn) { if (!this.costs.some(c => c.trip_id === trip.id)) return false; } return true; },
-
+                async checkComplete(trip) { if (!trip.fact_km || Number(trip.fact_km) <= 0) return false; const v = this.vehicles.find(x => x.plate === trip.vehicle); const isOwn = v && trip.vehicle !== '__other__'; if (isOwn) { if (!this.costs.some(c => String(c.trip_id).trim() === String(trip.id).trim())) return false; } return true; },
+                
                 async init() { await this.loadData(); },
-                async loadData() { this.loading = true; try { const r = await fetch(SCRIPT_URL + '?type=all&_cb=' + Date.now()); const d = await r.json(); this.trips = (d.trips || []).map(t => ({ ...t, date_raw: t.date ? t.date.substring(0, 10) : '', date: t.date ? new Date(t.date).toLocaleDateString('ru-RU') : '' })); this.orders = d.orders || []; this.drivers = d.drivers || []; this.vehicles = d.vehicles || []; this.routes = d.routes || []; this.costs = d.costs || []; this.allCosts = this.buildAllCosts(); this.toast = 'Данные обновлены'; setTimeout(() => this.toast = '', 2000); } catch (e) { console.error(e); } this.loading = false; },
-                buildAllCosts() { const result = [...this.costs]; this.trips.forEach(t => { const hasSalary = this.costs.some(c => c.trip_id === t.id && c.category === 'Зарплата'); const hasAmort = this.costs.some(c => c.trip_id === t.id && c.category === 'Амортизация'); if (!hasSalary && Number(t.rate) > 0) result.push({ trip_id: t.id, category: 'Зарплата', amount: Number(t.rate), note: 'авто', date: t.date }); const v = this.vehicles.find(x => x.plate === t.vehicle); if (!hasAmort && v && t.vehicle !== '__other__' && Number(t.fact_km) > 0 && Number(v.amort_rate) > 0) result.push({ trip_id: t.id, category: 'Амортизация', amount: Math.round(Number(t.fact_km) * Number(v.amort_rate)), note: t.fact_km + ' км × ' + v.amort_rate + ' ₽/км', date: t.date }); }); return result; },
+                async loadData() { this.loading = true; try { const r = await fetch(SCRIPT_URL + '?type=all&_cb=' + Date.now()); const d = await r.json(); this.trips = (d.trips || []).map(t => ({ ...t, date_raw: t.date ? t.date.substring(0, 10) : '', date: t.date ? new Date(t.date).toLocaleDateString('ru-RU') : '' })); this.orders = d.orders || []; this.drivers = d.drivers || []; this.vehicles = d.vehicles || []; this.routes = d.routes || []; this.costs = d.costs || []; this.toast = 'Данные обновлены'; setTimeout(() => this.toast = '', 2000); } catch(e) { console.error(e); } this.loading = false; },
                 tripsByStatus(s) { return this.trips.filter(t => t.status === s); },
-                ordersByTrip(id) { return this.orders.filter(o => o.trip_id === id); },
-                loadPercent(t) { const tv = Number(t.load_volume) || this.ordersByTrip(t.id).reduce((a, o) => a + (Number(o.volume) || 0), 0); const cap = Number(t.vehicle_volume) || (this.vehicles.find(v => v.plate === t.vehicle)?.volume) || 12; if (!cap) return 0; return Math.round(tv / cap * 100); },
+                ordersByTrip(id) { return this.orders.filter(o => String(o.trip_id).trim() === String(id).trim()); },
+                loadPercent(t) { const tv = Number(t.load_volume) || this.ordersByTrip(t.id).reduce((a,o) => a + (Number(o.volume)||0), 0); const cap = Number(t.vehicle_volume) || (this.vehicles.find(v => v.plate === t.vehicle)?.volume) || 12; if (!cap) return 0; return Math.round(tv / cap * 100); },
                 loadWidth(t) { return Math.min(this.loadPercent(t), 100); },
                 loadColor(t) { const p = this.loadPercent(t); if (p > 100) return 'load-orange'; if (p >= 81) return 'load-green'; if (p >= 51) return 'load-yellow'; return 'load-red'; },
                 showModal(type) { this.showErrors = false; this.modal = type; },
                 showTripDetail(id) { const t = this.trips.find(t => t.id === id); this.detailTrip = t ? { ...t } : null; this.editing = { vehicle: false, driver: false }; this.newCost = { category: 'Топливо', amount: '', note: '' }; this.modal = 'detail'; },
-                rebuildRoute(id) { const ords = this.ordersByTrip(id).sort((a, b) => (a.sequence || 99) - (b.sequence || 99)); const ads = ords.map(o => o.address).filter(Boolean); const trip = this.trips.find(t => t.id === id); const city = trip?.route?.split(':')[0] || 'Москва'; return city + ': ' + ads.join(' → '); },
+                rebuildRoute(id) { const ords = this.ordersByTrip(id).sort((a,b) => (a.sequence||99) - (b.sequence||99)); const ads = ords.map(o => o.address).filter(Boolean); const trip = this.trips.find(t => t.id === id); const city = trip?.route?.split(':')[0] || 'Москва'; return city + ': ' + ads.join(' → '); },
                 async updateRoute(id) { const nr = this.rebuildRoute(id); await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_trip', id, route: nr }) }); const idx = this.trips.findIndex(t => t.id === id); if (idx >= 0) this.trips[idx].route = nr; if (this.detailTrip?.id === id) this.detailTrip.route = nr; },
                 editField(f) { this.editing[f] = true; if (f === 'vehicle') { const v = this.vehicles.find(x => x.plate === this.detailTrip.vehicle); this.editForm.vehicle = v ? this.detailTrip.vehicle : '__other__'; this.editForm.vehicle_name = v ? '' : (this.detailTrip.vehicle || ''); } if (f === 'driver') { const d = this.drivers.find(x => x.name === this.detailTrip.driver); this.editForm.driver = d ? this.detailTrip.driver : '__other__'; this.editForm.driver_name = d ? '' : (this.detailTrip.driver || ''); } },
                 onEditVehicleChange() { if (this.editForm.vehicle !== '__other__') { const v = this.vehicles.find(x => x.plate === this.editForm.vehicle); this.editForm.vehicle_name = ''; if (v) this.detailTrip.vehicle_volume = v.volume; } },
                 async saveField(f) { this.saving = true; if (f === 'vehicle') this.detailTrip.vehicle = this.editForm.vehicle === '__other__' ? (this.editForm.vehicle_name || 'Наёмная') : this.editForm.vehicle; if (f === 'driver') this.detailTrip.driver = this.editForm.driver === '__other__' ? (this.editForm.driver_name || 'Наёмный') : this.editForm.driver; await this.saveDetailChange(); const idx = this.trips.findIndex(t => t.id === this.detailTrip.id); if (idx >= 0) Object.assign(this.trips[idx], { vehicle: this.detailTrip.vehicle, driver: this.detailTrip.driver, vehicle_volume: this.detailTrip.vehicle_volume, rate: this.detailTrip.rate, plan_km: this.detailTrip.plan_km, fact_km: this.detailTrip.fact_km, date_raw: this.detailTrip.date_raw, date: this.detailTrip.date_raw ? new Date(this.detailTrip.date_raw).toLocaleDateString('ru-RU') : '' }); this.editing[f] = false; this.saving = false; this.toast = 'Сохранено'; setTimeout(() => this.toast = '', 2000); },
-                async saveDetailField(f) { if (!this.detailTrip) return; await this.saveDetailChange(); const idx = this.trips.findIndex(t => t.id === this.detailTrip.id); if (idx >= 0) { this.trips[idx][f] = this.detailTrip[f]; if (f === 'date_raw') this.trips[idx].date = this.detailTrip.date_raw ? new Date(this.detailTrip.date_raw).toLocaleDateString('ru-RU') : ''; if (f === 'fact_km' || f === 'rate') this.allCosts = this.buildAllCosts(); } },
+                async saveDetailField(f) { if (!this.detailTrip) return; await this.saveDetailChange(); const idx = this.trips.findIndex(t => t.id === this.detailTrip.id); if (idx >= 0) { this.trips[idx][f] = this.detailTrip[f]; if (f === 'date_raw') this.trips[idx].date = this.detailTrip.date_raw ? new Date(this.detailTrip.date_raw).toLocaleDateString('ru-RU') : ''; } },
                 onVehicleChange() { if (this.formTrip.vehicle === '__other__') { this.formTrip.driver = '__other__'; this.formTrip.driver_name = ''; this.formTrip.rate = ''; } else { const v = this.vehicles.find(x => x.plate === this.formTrip.vehicle); this.formTrip.vehicle_volume = v ? v.volume : ''; } },
                 onDriverChange() { if (this.formTrip.driver === '__other__') { this.formTrip.rate = ''; } else { const d = this.drivers.find(x => x.name === this.formTrip.driver); this.formTrip.rate = d ? d.rate : ''; } },
                 async saveDetailChange() { if (!this.detailTrip) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_trip', id: this.detailTrip.id, date: this.detailTrip.date_raw, vehicle: this.detailTrip.vehicle, vehicle_volume: this.detailTrip.vehicle_volume, driver: this.detailTrip.driver, rate: this.detailTrip.rate, plan_km: this.detailTrip.plan_km, fact_km: this.detailTrip.fact_km }) }); },
-                async addCostToTrip() { if (!this.detailTrip || !this.newCost.amount || Number(this.newCost.amount) < 0) return; const cats = ['Топливо', 'Ремонт', 'Платные дороги', 'Штрафы', 'Прочее']; if (!cats.includes(this.newCost.category)) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_cost', trip_id: this.detailTrip.id, category: this.newCost.category, amount: Number(this.newCost.amount), note: this.newCost.note }) }); this.newCost = { category: 'Топливо', amount: '', note: '' }; await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); },
+                async addCostToTrip() { if (!this.detailTrip || !this.newCost.amount || Number(this.newCost.amount) <= 0) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_cost', trip_id: this.detailTrip.id, category: this.newCost.category, amount: Number(this.newCost.amount), note: this.newCost.note }) }); this.newCost = { category: 'Топливо', amount: '', note: '' }; await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); },
                 async updateOrderSequence(oid, seq) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_order_seq', id: oid, sequence: seq }) }); const o = this.orders.find(x => x.id === oid); if (o) o.sequence = seq; await this.updateRoute(this.detailTrip.id); },
                 async saveOrderEdit(f) { const pr = (f.phone || '').replace(/\D/g, '').slice(-10); await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_order', id: f.id, address: f.address, contact: f.contact, phone: pr, volume: f.volume }) }); await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); await this.updateRoute(this.detailTrip.id); this.toast = 'Адрес обновлён'; setTimeout(() => this.toast = '', 2000); },
-                async addTrip() { if (!this.formTrip.date || !this.formTrip.vehicle || !this.formTrip.driver || !this.formTrip.rate) { this.showErrors = true; return; } if (this.formTrip.vehicle === '__other__' && (!this.formTrip.vehicle_name || !this.formTrip.vehicle_volume)) { this.showErrors = true; return; } if ((this.formTrip.vehicle === '__other__' || this.formTrip.driver === '__other__') && !this.formTrip.driver_name) { this.showErrors = true; return; } const ha = this.formTrip.addresses.some(a => a.id && a.address); if (!ha) { this.showErrors = true; return; } this.saving = true; const vn = this.formTrip.vehicle === '__other__' ? this.formTrip.vehicle_name : this.formTrip.vehicle; const dn = (this.formTrip.vehicle === '__other__' || this.formTrip.driver === '__other__') ? this.formTrip.driver_name : this.formTrip.driver; const vv = this.formTrip.vehicle === '__other__' ? this.formTrip.vehicle_volume : (this.vehicles.find(v => v.plate === this.formTrip.vehicle)?.volume || ''); const sorted = [...this.formTrip.addresses].sort((a, b) => (a.sequence || 99) - (b.sequence || 99)); const ads = sorted.filter(a => a.address).map(a => a.address); const city = this.formTrip.city || 'Москва'; const fr = this.formTrip.type === 'Городской' ? city + ': ' + ads.join(' → ') : this.formTrip.route; const tv = this.formTrip.addresses.reduce((a, addr) => a + (Number(addr.volume) || 0), 0); const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_trip', date: this.formTrip.date, type: this.formTrip.type, vehicle: vn, driver: dn, route: fr || '', plan_km: this.formTrip.plan_km, rate: this.formTrip.rate, vehicle_volume: vv, load_volume: tv }) }); const result = await r.json(); const id = result.id; for (let i = 0; i < sorted.length; i++) { const a = sorted[i]; if (!a.id || !a.address) continue; const pr = (a.phone || '').replace(/\D/g, '').slice(-10); const oldT = this.orders.find(o => o.id === a.id)?.trip_id; const isD = this.orders.some(o => String(o.id) === String(a.id) && String(o.trip_id) === String(id)); if (!isD) { if (oldT && oldT !== id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'move_order', id: a.id, new_trip_id: id }) }); } await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_order', id: a.id, trip_id: id, address: a.address, contact: a.contact, phone: pr, volume: a.volume, sequence: i + 1, status: 'Новый' }) }); if (oldT && oldT !== id) { await this.updateRoute(oldT); } } } this.modal = null; this.formTrip = { date: '', type: 'Городской', vehicle: '', vehicle_name: '', vehicle_volume: '', driver: '', driver_name: '', rate: '', route: '', city: 'Москва', plan_km: 100, addresses: [{ sequence: 1, id: '', address: '', contact: '', phone: '', volume: '' }] }; this.saving = false; await this.loadData(); },
+                async addTrip() { if (!this.formTrip.date || !this.formTrip.vehicle || !this.formTrip.driver || !this.formTrip.rate) { this.showErrors = true; return; } if (this.formTrip.vehicle === '__other__' && (!this.formTrip.vehicle_name || !this.formTrip.vehicle_volume)) { this.showErrors = true; return; } if ((this.formTrip.vehicle === '__other__' || this.formTrip.driver === '__other__') && !this.formTrip.driver_name) { this.showErrors = true; return; } const ha = this.formTrip.addresses.some(a => a.id && a.address); if (!ha) { this.showErrors = true; return; } this.saving = true; const vn = this.formTrip.vehicle === '__other__' ? this.formTrip.vehicle_name : this.formTrip.vehicle; const dn = (this.formTrip.vehicle === '__other__' || this.formTrip.driver === '__other__') ? this.formTrip.driver_name : this.formTrip.driver; const vv = this.formTrip.vehicle === '__other__' ? this.formTrip.vehicle_volume : (this.vehicles.find(v => v.plate === this.formTrip.vehicle)?.volume || ''); const sorted = [...this.formTrip.addresses].sort((a,b) => (a.sequence||99) - (b.sequence||99)); const ads = sorted.filter(a => a.address).map(a => a.address); const city = this.formTrip.city || 'Москва'; const fr = this.formTrip.type === 'Городской' ? city + ': ' + ads.join(' → ') : this.formTrip.route; const tv = this.formTrip.addresses.reduce((a, addr) => a + (Number(addr.volume) || 0), 0); const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_trip', date: this.formTrip.date, type: this.formTrip.type, vehicle: vn, driver: dn, route: fr || '', plan_km: this.formTrip.plan_km, rate: this.formTrip.rate, vehicle_volume: vv, load_volume: tv }) }); const result = await r.json(); const id = result.id; for (let i = 0; i < sorted.length; i++) { const a = sorted[i]; if (!a.id || !a.address) continue; const pr = (a.phone || '').replace(/\D/g, '').slice(-10); const oldT = this.orders.find(o => o.id === a.id)?.trip_id; const isD = this.orders.some(o => String(o.id) === String(a.id) && String(o.trip_id) === String(id)); if (!isD) { if (oldT && oldT !== id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'move_order', id: a.id, new_trip_id: id }) }); } await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_order', id: a.id, trip_id: id, address: a.address, contact: a.contact, phone: pr, volume: a.volume, sequence: i + 1, status: 'Новый' }) }); if (oldT && oldT !== id) { await this.updateRoute(oldT); } } } this.modal = null; this.formTrip = { date: '', type: 'Городской', vehicle: '', vehicle_name: '', vehicle_volume: '', driver: '', driver_name: '', rate: '', route: '', city: 'Москва', plan_km: 100, addresses: [{sequence: 1, id:'', address:'', contact:'', phone:'', volume:''}] }; this.saving = false; await this.loadData(); },
                 async updateTripStatus(id, status) { if (status === 'Завершён') { const trip = this.trips.find(t => t.id === id); if (trip) { const ok = await this.checkComplete(trip); if (!ok) { this.toast = 'Заполните пробег факт и затраты!'; setTimeout(() => this.toast = '', 2000); if (this.detailTrip) this.detailTrip.status = trip.status; return; } } } await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'update_trip_status', id, status }) }); await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === id); this.toast = 'Статус обновлён'; setTimeout(() => this.toast = '', 2000); },
-                async deleteTrip(id) { if (!confirm('Удалить рейс ' + id + ' и все связанные затраты?')) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_trip', id }) }); for (const o of this.ordersByTrip(id)) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_order', id: o.id }) }); } for (const c of this.costs.filter(c => c.trip_id === id)) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_cost', trip_id: c.trip_id, category: c.category, amount: c.amount }) }); } this.modal = null; await this.loadData(); },
+                async deleteTrip(id) { if (!confirm('Удалить рейс ' + id + ' и все связанные затраты?')) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_trip', id }) }); for (const o of this.ordersByTrip(id)) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_order', id: o.id }) }); } for (const c of this.costs.filter(c => String(c.trip_id).trim() === String(id).trim())) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_cost', trip_id: c.trip_id, category: c.category, amount: c.amount }) }); } this.modal = null; await this.loadData(); },
                 async deleteOrder(id) { const oldT = this.orders.find(o => o.id === id)?.trip_id; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_order', id }) }); await this.loadData(); if (this.detailTrip) { this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); await this.updateRoute(this.detailTrip.id); } if (oldT && oldT !== this.detailTrip?.id) { await this.updateRoute(oldT); } },
                 async addOrderToTrip(id) { const oid = prompt('ID заказа:'); if (!oid) return; const isD = this.orders.some(o => String(o.id) === String(oid) && String(o.trip_id) === String(id)); if (isD) { alert('Этот заказ уже в рейсе!'); return; } const r = await fetch(`${SCRIPT_URL}?type=check_order&id=${oid}&_cb=${Date.now()}`); const os = await r.json(); if (os && os.found) { const oldT = os.trip_id; const msg = oldT ? `Заказ ${oid} сейчас в рейсе ${oldT}. Перенести?` : `Заказ ${oid} существует. Добавить?`; if (!confirm(msg)) return; const seq = this.ordersByTrip(id).length + 1; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'move_order', id: oid, new_trip_id: id }) }); await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_order', id: oid, trip_id: id, address: os.address, contact: os.contact, phone: os.phone, volume: os.volume, sequence: seq, status: 'Новый' }) }); await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === id); await this.updateRoute(id); if (oldT) { await this.updateRoute(oldT); } this.toast = 'Заказ ' + oid + ' перенесён'; setTimeout(() => this.toast = '', 2000); return; } const addr = prompt('Адрес:'); if (!addr) return; const cont = prompt('Контакт:') || ''; const ph = prompt('Телефон (+7):') || ''; const vol = prompt('Объём (м³):') || ''; const pr = ph.replace(/\D/g, '').slice(-10); const seq = this.ordersByTrip(id).length + 1; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_order', id: oid, trip_id: id, address: addr, contact: cont, phone: pr, volume: vol, sequence: seq, status: 'Новый' }) }); await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === id); await this.updateRoute(id); },
-                async printWaybill() { if (!this.selectedTrip) return; const trip = this.trips.find(t => t.id === this.selectedTrip); if (!trip) return; const dd = this.drivers.find(d => d.name === trip.driver); this.waybillData = { ...trip, driver_phone: dd?.phone || '' }; this.waybillOrders = this.ordersByTrip(trip.id).sort((a, b) => (a.sequence || 99) - (b.sequence || 99)); this.waybillTotalVol = this.waybillOrders.reduce((a, o) => a + (Number(o.volume) || 0), 0); this.$nextTick(() => window.print()); },
+                async printWaybill() { if (!this.selectedTrip) return; const trip = this.trips.find(t => t.id === this.selectedTrip); if (!trip) return; const dd = this.drivers.find(d => d.name === trip.driver); this.waybillData = { ...trip, driver_phone: dd?.phone || '' }; this.waybillOrders = this.ordersByTrip(trip.id).sort((a,b) => (a.sequence||99) - (b.sequence||99)); this.waybillTotalVol = this.waybillOrders.reduce((a,o) => a + (Number(o.volume)||0), 0); this.$nextTick(() => window.print()); },
                 async addVehicle() { this.saving = true; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_vehicle', plate: this.formVehicle.plate, model: this.formVehicle.model, volume: this.formVehicle.volume, fuel_rate: this.formVehicle.fuel_rate, amort_rate: this.formVehicle.amort_rate }) }); this.modal = null; this.formVehicle = { plate: '', model: '', volume: '', fuel_rate: '', amort_rate: '' }; this.saving = false; await this.loadData(); },
                 async addDriver() { this.saving = true; const pr = (this.formDriver.phone || '').replace(/\D/g, '').slice(-10); await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_driver', name: this.formDriver.name, phone: pr, rate: this.formDriver.rate }) }); this.modal = null; this.formDriver = { name: '', phone: '', rate: '' }; this.saving = false; await this.loadData(); },
                 async addRoute() { this.saving = true; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'add_route', ...this.formRoute }) }); this.modal = null; this.formRoute = { name: '', from: '', to: '', distance: '' }; this.saving = false; await this.loadData(); },
@@ -1231,5 +288,4 @@
         }
     </script>
 </body>
-
 </html>
