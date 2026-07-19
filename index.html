@@ -1275,10 +1275,8 @@
                                 @click="addOrderToTrip(detailTrip.id)">+ Добавить адрес</button>
                         </div>
                         <div style="margin-top:16px;display:flex;gap:8px;"><button class="btn btn-primary btn-sm"
-                                @click="saveDetailChange(); modal = null">Закрыть и сохранить</button><button
-                                class="btn btn-secondary btn-sm"
+                                @click="closeAndSaveDetail()">Закрыть и сохранить</button><button class="btn btn-secondary btn-sm"
                                 @click="deleteTrip(detailTrip.id); modal = null">Удалить рейс</button></div>
-                    </div>
                 </template>
             </div>
         </div>
@@ -1578,6 +1576,28 @@
                             load_volume: this.detailTrip.load_volume
                         })
                     });
+                },
+                async closeAndSaveDetail() {
+                    // Находим все элементы с Alpine-компонентами
+                    const allElements = document.querySelectorAll('[x-data]');
+
+                    for (const el of allElements) {
+                        try {
+                            const alpineData = el.__x && el.__x.$data;
+                            if (alpineData && alpineData.editOrder === true && alpineData.editForm) {
+                                // Сохраняем изменения адреса
+                                await this.saveOrderEdit(alpineData.editForm);
+                                // Закрываем режим редактирования
+                                alpineData.editOrder = false;
+                            }
+                        } catch (e) {
+                            // Игнорируем элементы без Alpine-данных
+                        }
+                    }
+
+                    // Сохраняем рейс и закрываем модалку
+                    await this.saveDetailChange();
+                    this.modal = null;
                 },
 
                 // ===== COST ACTIONS =====
