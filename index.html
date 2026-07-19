@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -520,7 +520,7 @@
                 async saveOrderEdit(f) {
                     const pr = (f.phone || '').replace(/\D/g, '').slice(-10);
 
-                    // Сохраняем изменения заказа
+                    // Сохраняем ТОЛЬКО изменения заказа (не перезагружаем ничего)
                     await fetch(SCRIPT_URL, {
                         method: 'POST',
                         body: this.apiBody({
@@ -533,16 +533,20 @@
                         })
                     });
 
-                    // Обновляем данные ТОЛЬКО заказов, не перезагружая всё
-                    const r = await fetch(SCRIPT_URL + '?type=orders&_cb=' + Date.now());
-                    const d = await r.json();
-                    this.orders = d.orders || [];
+                    // Обновляем заказ в локальном массиве (без перезагрузки с сервера)
+                    const order = this.orders.find(o => o.id === f.id);
+                    if (order) {
+                        order.address = f.address;
+                        order.contact = f.contact;
+                        order.phone = pr;
+                        order.volume = f.volume || '';
+                    }
 
-                    // Пересчитываем load_volume
+                    // Пересчитываем load_volume локально
                     const orders = this.ordersByTrip(this.detailTrip.id);
                     const nl = orders.reduce((s, o) => s + (Number(o.volume) || 0), 0);
 
-                    // Обновляем load_volume в рейсе
+                    // Обновляем load_volume в Google Sheets
                     await fetch(SCRIPT_URL, {
                         method: 'POST',
                         body: this.apiBody({
@@ -552,19 +556,28 @@
                         })
                     });
 
-                    // Обновляем detailTrip и trips
+                    // Обновляем локально
                     if (this.detailTrip) {
                         this.detailTrip.load_volume = nl;
                     }
                     const ti = this.trips.findIndex(t => t.id === this.detailTrip.id);
                     if (ti >= 0) this.trips[ti].load_volume = nl;
 
-                    // Обновляем адреса в detailTrip
-                    const updatedOrder = this.orders.find(o => o.id === f.id);
-                    if (updatedOrder && this.detailTrip) {
-                        // Обновляем маршрут (он зависит от адресов)
-                        await this.updateRoute(this.detailTrip.id);
-                    }
+                    // Обновляем маршрут (он зависит от адресов)
+                    const ords = this.ordersByTrip(this.detailTrip.id).sort((a, b) => (a.sequence || 99) - (b.sequence || 99));
+                    const ads = ords.map(o => o.address).filter(Boolean);
+                    const city = this.detailTrip.route?.split(':')[0] || 'Москва';
+                    const nr = city + ': ' + ads.join(' → ');
+
+                    // Сохраняем новый маршрут
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: this.apiBody({ action: 'update_trip', id: this.detailTrip.id, route: nr })
+                    });
+
+                    // Обновляем локально
+                    if (this.detailTrip) this.detailTrip.route = nr;
+                    if (ti >= 0) this.trips[ti].route = nr;
 
                     this.toast = 'Адрес обновлён';
                     setTimeout(() => this.toast = '', 2000);
