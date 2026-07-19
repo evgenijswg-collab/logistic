@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -517,7 +517,58 @@
                 async saveCostEdit() { await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'delete_cost', trip_id: this.editCostForm.trip_id, category: this.editCostForm.originalCategory, amount: this.editCostForm.originalAmount }) }); await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'add_cost', trip_id: this.editCostForm.trip_id, category: this.editCostForm.category, amount: Number(this.editCostForm.amount), note: this.editCostForm.note }) }); this.editingCost = false; await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); this.toast = 'Затрата обновлена'; setTimeout(() => this.toast = '', 2000); },
                 async deleteCost(c) { if (!confirm(`Удалить затрату "${c.category}" на ${fmtMoney(c.amount)}?`)) return; await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'delete_cost', trip_id: String(this.detailTrip.id), category: c.category, amount: Number(c.amount) }) }); await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); this.toast = 'Затрата удалена'; setTimeout(() => this.toast = '', 2000); },
                 async updateOrderSequence(oid, seq) { await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'update_order_seq', id: oid, sequence: seq }) }); const o = this.orders.find(x => x.id === oid); if (o) o.sequence = seq; await this.updateRoute(this.detailTrip.id); },
-                async saveOrderEdit(f) { const pr = (f.phone || '').replace(/\D/g, '').slice(-10); await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'update_order', id: f.id, address: f.address, contact: f.contact, phone: pr, volume: f.volume ? Number(f.volume) : '' }) }); await this.loadData(); const orders = this.ordersByTrip(this.detailTrip.id); const nl = orders.reduce((s, o) => s + (Number(o.volume) || 0), 0); await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'update_trip', id: this.detailTrip.id, load_volume: nl }) }); if (this.detailTrip) { this.detailTrip = this.trips.find(t => t.id === this.detailTrip.id); this.detailTrip.load_volume = nl; } const ti = this.trips.findIndex(t => t.id === this.detailTrip.id); if (ti >= 0) this.trips[ti].load_volume = nl; await this.updateRoute(this.detailTrip.id); this.toast = 'Адрес обновлён'; setTimeout(() => this.toast = '', 2000); },
+                async saveOrderEdit(f) {
+                    const pr = (f.phone || '').replace(/\D/g, '').slice(-10);
+
+                    // Сохраняем изменения заказа
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: this.apiBody({
+                            action: 'update_order',
+                            id: f.id,
+                            address: f.address,
+                            contact: f.contact,
+                            phone: pr,
+                            volume: f.volume ? Number(f.volume) : ''
+                        })
+                    });
+
+                    // Обновляем данные ТОЛЬКО заказов, не перезагружая всё
+                    const r = await fetch(SCRIPT_URL + '?type=orders&_cb=' + Date.now());
+                    const d = await r.json();
+                    this.orders = d.orders || [];
+
+                    // Пересчитываем load_volume
+                    const orders = this.ordersByTrip(this.detailTrip.id);
+                    const nl = orders.reduce((s, o) => s + (Number(o.volume) || 0), 0);
+
+                    // Обновляем load_volume в рейсе
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: this.apiBody({
+                            action: 'update_trip',
+                            id: this.detailTrip.id,
+                            load_volume: nl
+                        })
+                    });
+
+                    // Обновляем detailTrip и trips
+                    if (this.detailTrip) {
+                        this.detailTrip.load_volume = nl;
+                    }
+                    const ti = this.trips.findIndex(t => t.id === this.detailTrip.id);
+                    if (ti >= 0) this.trips[ti].load_volume = nl;
+
+                    // Обновляем адреса в detailTrip
+                    const updatedOrder = this.orders.find(o => o.id === f.id);
+                    if (updatedOrder && this.detailTrip) {
+                        // Обновляем маршрут (он зависит от адресов)
+                        await this.updateRoute(this.detailTrip.id);
+                    }
+
+                    this.toast = 'Адрес обновлён';
+                    setTimeout(() => this.toast = '', 2000);
+                },
                 async addTrip() { if (!this.formTrip.date || !this.formTrip.vehicle || !this.formTrip.driver || !this.formTrip.rate) { this.showErrors = true; return; } if (this.formTrip.vehicle === '__other__' && (!this.formTrip.vehicle_name || !this.formTrip.vehicle_volume)) { this.showErrors = true; return; } if ((this.formTrip.vehicle === '__other__' || this.formTrip.driver === '__other__') && !this.formTrip.driver_name) { this.showErrors = true; return; } if (!this.formTrip.addresses.some(a => a.id && a.address)) { this.showErrors = true; return; } this.saving = true; const vn = this.formTrip.vehicle === '__other__' ? this.formTrip.vehicle_name : this.formTrip.vehicle; const dn = (this.formTrip.vehicle === '__other__' || this.formTrip.driver === '__other__') ? this.formTrip.driver_name : this.formTrip.driver; const vv = this.formTrip.vehicle === '__other__' ? this.formTrip.vehicle_volume : (this.vehicles.find(v => v.plate === this.formTrip.vehicle)?.volume || ''); const sorted = [...this.formTrip.addresses].sort((a,b) => (a.sequence||99) - (b.sequence||99)); const ads = sorted.filter(a => a.address).map(a => a.address); const fr = this.formTrip.type === 'Городской' ? (this.formTrip.city || 'Москва') + ': ' + ads.join(' → ') : this.formTrip.route; const tv = this.formTrip.addresses.reduce((a, addr) => a + (Number(addr.volume) || 0), 0); const r = await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'add_trip', date: this.formTrip.date, type: this.formTrip.type, vehicle: vn, driver: dn, route: fr || '', plan_km: this.formTrip.plan_km, rate: this.formTrip.rate, vehicle_volume: vv, load_volume: tv }) }); const result = await r.json(); const id = result.id; for (let i = 0; i < sorted.length; i++) { const a = sorted[i]; if (!a.id || !a.address) continue; const pr = (a.phone || '').replace(/\D/g, '').slice(-10); const oldT = this.orders.find(o => o.id === a.id)?.trip_id; if (!this.orders.some(o => String(o.id) === String(a.id) && String(o.trip_id) === String(id))) { if (oldT && oldT !== id) { await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'move_order', id: a.id, new_trip_id: id }) }); } await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'add_order', id: a.id, trip_id: id, address: a.address, contact: a.contact, phone: pr, volume: a.volume, sequence: i + 1, status: 'Новый' }) }); if (oldT && oldT !== id) { await this.updateRoute(oldT); } } } this.modal = null; this.formTrip = { date: '', type: 'Городской', vehicle: '', vehicle_name: '', vehicle_volume: '', driver: '', driver_name: '', rate: '', route: '', city: 'Москва', plan_km: 100, addresses: [{sequence: 1, id:'', address:'', contact:'', phone:'', volume:''}] }; this.saving = false; await this.loadData(); },
                 async updateTripStatus(id, status) { if (status === 'Завершён') { const trip = this.trips.find(t => t.id === id); if (trip && !await this.checkComplete(trip)) { this.toast = 'Заполните пробег факт и затраты!'; setTimeout(() => this.toast = '', 2000); if (this.detailTrip) this.detailTrip.status = trip.status; return; } } await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'update_trip_status', id, status }) }); await this.loadData(); if (this.detailTrip) this.detailTrip = this.trips.find(t => t.id === id); this.toast = 'Статус обновлён'; setTimeout(() => this.toast = '', 2000); },
                 async deleteTrip(id) { if (!confirm('Удалить рейс ' + id + '?')) return; await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'delete_trip', id }) }); for (const o of this.ordersByTrip(id)) { await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'delete_order', id: o.id }) }); } for (const c of this.costs.filter(c => String(c.trip_id).trim() === String(id).trim())) { await fetch(SCRIPT_URL, { method: 'POST', body: this.apiBody({ action: 'delete_cost', trip_id: c.trip_id, category: c.category, amount: c.amount }) }); } this.modal = null; await this.loadData(); },
