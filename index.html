@@ -244,8 +244,8 @@
             <button class="btn btn-primary btn-sm" @click="closeAndSaveDetail()">Закрыть и сохранить</button>
             <button class="btn btn-secondary btn-sm" @click="printWaybillFromCard()">🖨️ Путевой лист</button>
             <button class="btn btn-secondary btn-sm" @click="deleteTrip(detailTrip.id); modal = null">Удалить рейс</button>
-        </div>
-
+            </div> 
+        </div></template></div></div>
         <!-- МОДАЛКА: РЕДАКТИРОВАНИЕ ЗАТРАТЫ -->
         <div class="modal-overlay" x-show="editingCost" @click.self="editingCost = null" style="z-index:25;"><div class="modal" style="width:400px;"><button class="modal-close" @click="editingCost = null">✕</button><div class="modal-title">Редактировать затрату</div><div class="form-group"><label class="form-label">Категория</label><input type="text" class="form-input" x-model="editCostForm.category" disabled></div><div class="form-group"><label class="form-label">Сумма</label><input type="number" class="form-input" x-model="editCostForm.amount" min="0"></div><div class="form-group"><label class="form-label">Примечание</label><input type="text" class="form-input" x-model="editCostForm.note"></div><button class="btn btn-primary" @click="saveCostEdit()" :disabled="saving">Сохранить</button></div></div>
 
